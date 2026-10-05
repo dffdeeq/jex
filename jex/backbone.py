@@ -53,14 +53,28 @@ class Backbone:
         device: str = "cpu",
         attn_implementation: str = "sdpa",
         max_state_tokens: int | None = 4096,
+        quantization: str | None = None,
     ):
+        """``quantization`` = "4bit" / "8bit" loads the weights with bitsandbytes
+        (CUDA only), e.g. a 7B-14B teacher on a single 16 GB T4."""
         self.name = name_or_path
         self.device = torch.device(device)
         self.dtype = dtype
         self.tokenizer = AutoTokenizer.from_pretrained(name_or_path)
-        self.lm = AutoModelForCausalLM.from_pretrained(
-            name_or_path, dtype=dtype, attn_implementation=attn_implementation
-        ).to(self.device)
+        kwargs = {"dtype": dtype, "attn_implementation": attn_implementation}
+        if quantization:
+            from transformers import BitsAndBytesConfig
+
+            kwargs["quantization_config"] = BitsAndBytesConfig(
+                load_in_4bit=quantization == "4bit",
+                load_in_8bit=quantization == "8bit",
+                bnb_4bit_compute_dtype=dtype,
+                bnb_4bit_quant_type="nf4",
+            )
+            kwargs["device_map"] = {"": self.device.index or 0}
+            self.lm = AutoModelForCausalLM.from_pretrained(name_or_path, **kwargs)
+        else:
+            self.lm = AutoModelForCausalLM.from_pretrained(name_or_path, **kwargs).to(self.device)
         self.lm.eval().requires_grad_(False)
         self.base = self.lm.base_model
         self.lm_head = self.lm.get_output_embeddings()

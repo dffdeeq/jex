@@ -90,15 +90,18 @@ class TrainConfig:
     label_smoothing: float = 0.05
     use_teacher: bool = True
     seed: int = 0
+    device: str = "cpu"
 
 
 def head_logits(head: DecisionHead, items: list[Item], batch_size: int = 64) -> list[torch.Tensor]:
     head.eval()
+    device = next(head.parameters()).device
     out = []
     with torch.no_grad():
         for i in range(0, len(items), batch_size):
             chunk = items[i : i + batch_size]
-            lg = head(collate([it.feats for it in chunk], [it.type for it in chunk], head.cfg.use_memory, head.cfg.max_memory))
+            b = collate([it.feats for it in chunk], [it.type for it in chunk], head.cfg.use_memory, head.cfg.max_memory)
+            lg = head(b.to(device)).cpu()
             out += [lg[j, : it.n] for j, it in enumerate(chunk)]
     return out
 
@@ -122,7 +125,8 @@ def train_head(
     pool = [(it, tg) for it, tg in zip(train, targets) if tg is not None]
     log(f"training on {len(pool)} questions; teacher temperatures {t_temps}")
 
-    head = DecisionHead(head_cfg)
+    device = torch.device(cfg.device)
+    head = DecisionHead(head_cfg).to(device)
     opt = torch.optim.AdamW(head.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     steps = cfg.epochs * ((len(pool) + cfg.batch_size - 1) // cfg.batch_size)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=cfg.lr, total_steps=steps, pct_start=0.1)
@@ -136,16 +140,17 @@ def train_head(
         for i in range(0, len(pool), cfg.batch_size):
             chunk = pool[i : i + cfg.batch_size]
             b = collate([it.feats for it, _ in chunk], [it.type for it, _ in chunk], head_cfg.use_memory, head_cfg.max_memory)
+            b = b.to(device)
             logits = head(b)
             q = torch.zeros_like(logits)
             for j, (_, tg) in enumerate(chunk):
-                q[j, : tg.shape[0]] = tg
+                q[j, : tg.shape[0]] = tg.to(device)
             mask = b.option_mask
             logp = torch.log_softmax(logits, -1).masked_fill(~mask, 0.0)
             p = logp.exp() * mask
             loss = -(q * logp).sum(-1).mean() + cfg.brier_weight * ((p - q) ** 2).sum(-1).mean()
             if use_rl:
-                is_score = torch.tensor([it.type == "score" for it, _ in chunk])
+                is_score = torch.tensor([it.type == "score" for it, _ in chunk], device=device)
                 loss = loss + cfg.rl_weight * rlcd_loss(logits, q, mask, is_score)
             opt.zero_grad()
             loss.backward()
@@ -158,9 +163,9 @@ def train_head(
         log(f"epoch {epoch}{' (rlcd)' if use_rl else ''}: loss {total / len(pool):.4f} "
             f"dev acc {dev_m['accuracy']:.3f} nll {dev_m['nll']:.3f} ece {dev_m['ece']:.3f}")
         if dev_m["nll"] < best:
-            best, best_state = dev_m["nll"], {k: v.clone() for k, v in head.state_dict().items()}
+            best, best_state = dev_m["nll"], {k: v.detach().cpu().clone() for k, v in head.state_dict().items()}
 
     head.load_state_dict(best_state)
-    head.eval()
+    head = head.cpu().eval()
     temps = fit_type_temperatures(head_logits(head, dev), dev)
     return head, {"history": history, "temperatures": temps, "teacher_temperatures": t_temps}

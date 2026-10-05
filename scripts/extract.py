@@ -12,6 +12,7 @@ teacher is itself a (bigger, slower) System One model.
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from pathlib import Path
 
@@ -42,20 +43,20 @@ def featurize(bb: Backbone, records, keep_memory: bool, log_every: int = 100):
         feats = bb.run([enc], keep_memory=keep_memory)[0]
         row = {"questions": [], "num_tokens": enc.num_tokens}
         if keep_memory:
-            row["state_hidden"] = feats[0].state_hidden.half()
+            row["state_hidden"] = feats[0].state_hidden.half().cpu()
         for q, f in zip(req.questions, feats):
             item = {
                 "name": q.name,
                 "type": q.type,
                 "n": q.num_options,
-                "prior": f.prior,
+                "prior": f.prior.cpu() if f.prior is not None else None,
                 "gold": rec.labels.get(q.name),
             }
             if keep_memory:
                 item.update(
-                    answer_hidden=f.answer_hidden.half(),
-                    option_hidden=f.option_hidden.half(),
-                    branch_hidden=f.branch_hidden.half(),
+                    answer_hidden=f.answer_hidden.half().cpu(),
+                    option_hidden=f.option_hidden.half().cpu(),
+                    branch_hidden=f.branch_hidden.half().cpu(),
                 )
             row["questions"].append(item)
         rows.append(row)
@@ -74,7 +75,13 @@ def main():
     ap.add_argument("--eval-per-task", type=int, default=100)
     ap.add_argument("--heldout-per-task", type=int, default=200)
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--dtype", default=None, choices=["float32", "float16", "bfloat16"],
+                    help="default: float16 on cuda, float32 on cpu")
+    ap.add_argument("--teacher-quant", default=None, choices=["4bit", "8bit"],
+                    help="bitsandbytes quantization for a big teacher (cuda only)")
     args = ap.parse_args()
+    dtype = getattr(torch, args.dtype or ("float16" if args.device.startswith("cuda") else "float32"))
     torch.set_num_threads(args.threads)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -83,15 +90,19 @@ def main():
     for name, recs in data.items():
         print(f"{name}: {len(recs)} records, {sum(len(r.questions) for r in recs)} questions", flush=True)
     torch.save({k: [r.__dict__ for r in v] for k, v in data.items()}, out / "records.pt")
+    (out / "meta.json").write_text(json.dumps({"student": args.student, "teacher": args.teacher,
+                                               "teacher_quant": args.teacher_quant, "dtype": str(dtype)}))
 
-    student = Backbone(args.student)
+    student = Backbone(args.student, dtype=dtype, device=args.device)
     for name, recs in data.items():
         path = out / f"student_{name}.pt"
         if not path.exists():
             torch.save(featurize(student, recs, keep_memory=True), path)
     del student
+    if args.device.startswith("cuda"):
+        torch.cuda.empty_cache()
 
-    teacher = Backbone(args.teacher)
+    teacher = Backbone(args.teacher, dtype=dtype, device=args.device, quantization=args.teacher_quant)
     for name in ("train", "dev", "eval"):
         path = out / f"teacher_{name}.pt"
         if not path.exists():

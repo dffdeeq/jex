@@ -60,10 +60,11 @@ def collate(
     N = len(feats)
     D = feats[0].answer_hidden.shape[-1]
     O = max(f.option_hidden.shape[0] for f in feats)
-    options = torch.zeros(N, O, D)
-    option_mask = torch.zeros(N, O, dtype=torch.bool)
-    prior = torch.zeros(N, O)
-    has_prior = torch.zeros(N, dtype=torch.bool)
+    dev = feats[0].answer_hidden.device
+    options = torch.zeros(N, O, D, device=dev)
+    option_mask = torch.zeros(N, O, dtype=torch.bool, device=dev)
+    prior = torch.zeros(N, O, device=dev)
+    has_prior = torch.zeros(N, dtype=torch.bool, device=dev)
     for i, f in enumerate(feats):
         n = f.option_hidden.shape[0]
         options[i, :n] = f.option_hidden.float()
@@ -75,8 +76,8 @@ def collate(
     if use_memory:
         mems = [torch.cat([f.state_hidden, f.branch_hidden])[-max_memory:] for f in feats]
         M = max(m.shape[0] for m in mems)
-        memory = torch.zeros(N, M, D)
-        memory_mask = torch.zeros(N, M, dtype=torch.bool)
+        memory = torch.zeros(N, M, D, device=dev)
+        memory_mask = torch.zeros(N, M, dtype=torch.bool, device=dev)
         for i, m in enumerate(mems):
             memory[i, : m.shape[0]] = m.float()
             memory_mask[i, : m.shape[0]] = True
@@ -86,7 +87,7 @@ def collate(
         option_mask=option_mask,
         prior=prior,
         has_prior=has_prior,
-        type_ids=torch.tensor([TYPE_IDS[t] for t in types]),
+        type_ids=torch.tensor([TYPE_IDS[t] for t in types], device=dev),
         memory=memory,
         memory_mask=memory_mask,
     )

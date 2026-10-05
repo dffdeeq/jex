@@ -63,7 +63,11 @@ async def run_load(engine: AsyncEngine, rate: float, n: int, seed: int) -> dict:
 
 
 async def main_async(args):
-    model = JexModel(Backbone(args.backbone))
+    dtype = torch.float16 if args.device.startswith("cuda") else torch.float32
+    if args.checkpoint:
+        model = JexModel.load(args.checkpoint, device=args.device, dtype=dtype)
+    else:
+        model = JexModel(Backbone(args.backbone, dtype=dtype, device=args.device))
     model.predict({"state": "warm up", "questions": {"q": {"type": "noul", "instructions": "ok?"}}})
     rows = []
     for rate in args.rates:
@@ -91,6 +95,8 @@ def main():
     ap.add_argument("--n", type=int, default=60)
     ap.add_argument("--out", default="artifacts/bench_async.json")
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--checkpoint", default=None, help="trained head; default: zero-shot verbalizer")
     args = ap.parse_args()
     torch.set_num_threads(args.threads)
     asyncio.run(main_async(args))

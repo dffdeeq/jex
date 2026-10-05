@@ -1,10 +1,10 @@
 """Accuracy / calibration of every variant on in-domain and held-out tasks.
 
 Variants (all prefill-only, same request format):
-  student-zs     frozen 0.5B, verbalizer readout, no training
-  student-zs+T   same, with per-type temperatures fitted on dev
-  jex (head)     frozen 0.5B + trained head (+ dev temperatures)
-  teacher-zs+T   frozen 1.5B teacher, verbalizer readout + dev temperatures
+  zero-shot <student>        frozen student, verbalizer readout, no training
+  zero-shot <student> +T     same, with per-type temperatures fitted on dev
+  jex <student> + head       frozen student + trained head (+ dev temperatures)
+  teacher zero-shot <t> +T   frozen teacher, verbalizer readout + dev temperatures
 
     python scripts/evaluate.py --feats artifacts/feats --heads artifacts/jex-head artifacts/ablation-*
 """
@@ -53,16 +53,20 @@ def main():
 
     dev = load_split(args.feats, "dev")
     ev = load_split(args.feats, "eval")
+    meta_path = Path(args.feats, "meta.json")
+    meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    student = meta.get("student", "student").split("/")[-1]
+    teacher = meta.get("teacher", "teacher").split("/")[-1]
     results = {}
 
     zs = lambda items: [it.feats.prior.float() for it in items]  # noqa: E731
-    results["student-zs (0.5B)"] = _metrics(ev, zs(ev), {})
-    results["student-zs+T (0.5B)"] = _metrics(ev, zs(ev), fit_type_temperatures(zs(dev), dev))
+    results[f"zero-shot {student}"] = _metrics(ev, zs(ev), {})
+    results[f"zero-shot {student} +T"] = _metrics(ev, zs(ev), fit_type_temperatures(zs(dev), dev))
     tz = lambda items: [it.teacher_logits.float() for it in items]  # noqa: E731
-    results["teacher-zs+T (1.5B)"] = _metrics(ev, tz(ev), fit_type_temperatures(tz(dev), dev))
+    results[f"teacher zero-shot {teacher} +T"] = _metrics(ev, tz(ev), fit_type_temperatures(tz(dev), dev))
     for path in args.heads:
         model = JexModel.load(path, backbone=_NoBackbone())
-        label = f"jex head [{Path(path).name}]"
+        label = f"jex {student} + head [{Path(path).name}]"
         results[label] = _metrics(ev, head_logits(model.head, ev), model.temperatures)
 
     Path(args.out).write_text(json.dumps(results, indent=2))

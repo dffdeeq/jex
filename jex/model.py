@@ -23,7 +23,8 @@ class JexModel:
         name: str = "jex-0.1",
     ):
         self.backbone = backbone
-        self.head = head.eval() if head is not None else None
+        device = getattr(backbone, "device", torch.device("cpu"))
+        self.head = head.to(device).eval() if head is not None else None
         self.temperatures = temperatures or {}
         self.name = name
 
@@ -40,7 +41,10 @@ class JexModel:
             out = self.head(batch)
             raw = [out[i, : q.num_options] for i, q in enumerate(questions)]
         else:
-            raw = [f.prior if f.prior is not None else torch.zeros(q.num_options) for f, q in zip(feats, questions)]
+            raw = [
+                f.prior if f.prior is not None else torch.zeros(q.num_options, device=f.answer_hidden.device)
+                for f, q in zip(feats, questions)
+            ]
         return [lg.float() / self.temperatures.get(q.type, 1.0) for lg, q in zip(raw, questions)]
 
     def answers(self, feats: list[QuestionFeatures], questions: list[Question]) -> list[Answer]:

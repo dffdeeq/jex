@@ -92,24 +92,36 @@ def ar_json_prompt(bb: Backbone, request) -> list[int]:
     return bb.tokenizer(text, add_special_tokens=False)["input_ids"]
 
 
-def ar_json_valid(text: str, request) -> bool:
+def ar_json_check(text: str, request) -> tuple[bool, bool]:
+    """(strict, lenient) validity of a generated JSON answer.
+
+    strict:  parses, every value is exactly an allowed label or option id
+             (for noul also yes/no/true/false);
+    lenient: parses, and every value at least unambiguously starts with or
+             names an allowed option (e.g. "B (technical)").
+    """
     m = re.search(r"\{.*\}", text, re.S)
     if not m:
-        return False
+        return False, False
     try:
         obj = json.loads(m.group(0))
     except json.JSONDecodeError:
-        return False
+        return False, False
     if not isinstance(obj, dict):
-        return False
+        return False, False
+    strict = lenient = True
     for q in request.questions:
-        # Be lenient: accept the label, the option id or (for noul) yes/no/true/false.
         allowed = {s.lower() for s in (*option_labels(q), *q.option_ids)}
         if q.type == "noul":
             allowed |= {"yes", "no", "true", "false"}
-        if str(obj.get(q.name)).strip().lower() not in allowed:
-            return False
-    return True
+        v = str(obj.get(q.name)).strip().lower()
+        if v not in allowed:
+            strict = False
+            named = any(re.match(rf"{re.escape(a)}\b", v) for a in allowed) or any(
+                re.search(rf"\b{re.escape(o.lower())}\b", v) for o in q.option_ids
+            )
+            lenient = lenient and named
+    return strict, lenient
 
 
 def main():
@@ -119,11 +131,17 @@ def main():
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--out", default="artifacts/bench_latency.json")
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--checkpoint", default=None, help="trained head; default: zero-shot verbalizer")
     args = ap.parse_args()
     torch.set_num_threads(args.threads)
 
-    bb = Backbone(args.backbone)
-    model = JexModel(bb)
+    dtype = torch.float16 if args.device.startswith("cuda") else torch.float32
+    if args.checkpoint:
+        model = JexModel.load(args.checkpoint, device=args.device, dtype=dtype)
+    else:
+        model = JexModel(Backbone(args.backbone, dtype=dtype, device=args.device))
+    bb = model.backbone
     rows = []
     for k in args.ks:
         names = list(QUESTIONS)[:k]
@@ -146,7 +164,8 @@ def main():
         row["llm_json_generation"] = timed(gen, 1)
         text = bb.tokenizer.decode(out["ids"], skip_special_tokens=True)
         row["llm_json_new_tokens"] = len(out["ids"])
-        row["llm_json_valid"] = ar_json_valid(text, req)
+        row["llm_json_valid_strict"], row["llm_json_valid_lenient"] = ar_json_check(text, req)
+        row["llm_json_text"] = text[:400]
 
         def gen_each():
             for q in enc.questions:
@@ -158,12 +177,12 @@ def main():
 
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(rows, indent=2))
-    print("\n| K | tokens | jex one pass | jex cached state | jex K separate | LLM JSON gen | LLM K gens | JSON valid |")
+    print("\n| K | tokens | jex one pass | jex cached state | jex K separate | LLM JSON gen | LLM K gens | JSON strict / lenient |")
     print("|---|---|---|---|---|---|---|---|")
     for r in rows:
         print(f"| {r['k']} | {r['tokens']} | {r['jex_one_pass'] * 1000:.0f} ms | {r['jex_cached_state'] * 1000:.0f} ms | "
               f"{r['jex_k_separate'] * 1000:.0f} ms | {r['llm_json_generation'] * 1000:.0f} ms | "
-              f"{r['llm_k_generations'] * 1000:.0f} ms | {r['llm_json_valid']} |")
+              f"{r['llm_k_generations'] * 1000:.0f} ms | {r['llm_json_valid_strict']} / {r['llm_json_valid_lenient']} |")
 
 
 if __name__ == "__main__":
