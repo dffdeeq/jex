@@ -24,14 +24,19 @@ from jex.schema import parse_request
 
 
 def splits(args) -> dict[str, list]:
-    out = {"train": [], "dev": [], "eval": []}
+    wanted = set(args.splits.split(","))
+    out = {k: [] for k in ("train", "dev", "eval") if k in wanted}
     for task in TRAIN_TASKS:
-        out["train"] += build(task, "train", args.train_per_task, seed=0, aux_max=2)
-        # dev is carved from train right after the training records: no overlap.
-        out["dev"] += build(task, "train", args.dev_per_task, seed=0, aux_max=1, offset=args.train_per_task)
-        out["eval"] += build(task, "test", args.eval_per_task, seed=2)
-    for task in HELDOUT_TASKS:
-        out["eval"] += build(task, "test", args.heldout_per_task, seed=2)
+        if "train" in out:
+            out["train"] += build(task, "train", args.train_per_task, seed=0, aux_max=2)
+        if "dev" in out:
+            # dev is carved from train right after the training records: no overlap.
+            out["dev"] += build(task, "train", args.dev_per_task, seed=0, aux_max=1, offset=args.train_per_task)
+        if "eval" in out:
+            out["eval"] += build(task, "test", args.eval_per_task, seed=2)
+    if "eval" in out:
+        for task in HELDOUT_TASKS:
+            out["eval"] += build(task, "test", args.heldout_per_task, seed=2)
     return out
 
 
@@ -80,6 +85,8 @@ def main():
                     help="default: float16 on cuda, float32 on cpu")
     ap.add_argument("--teacher-quant", default=None, choices=["4bit", "8bit"],
                     help="bitsandbytes quantization for a big teacher (cuda only)")
+    ap.add_argument("--splits", default="train,dev,eval")
+    ap.add_argument("--skip-teacher", action="store_true")
     args = ap.parse_args()
     dtype = getattr(torch, args.dtype or ("float16" if args.device.startswith("cuda") else "float32"))
     torch.set_num_threads(args.threads)
@@ -102,8 +109,11 @@ def main():
     if args.device.startswith("cuda"):
         torch.cuda.empty_cache()
 
+    if args.skip_teacher:
+        print("done (no teacher)", flush=True)
+        return
     teacher = Backbone(args.teacher, dtype=dtype, device=args.device, quantization=args.teacher_quant)
-    for name in ("train", "dev", "eval"):
+    for name in data:
         path = out / f"teacher_{name}.pt"
         if not path.exists():
             rows = featurize(teacher, data[name], keep_memory=False)

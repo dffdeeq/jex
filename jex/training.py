@@ -89,6 +89,9 @@ class TrainConfig:
     teacher_mix: float = 0.3
     label_smoothing: float = 0.05
     use_teacher: bool = True
+    # KL(calibrated zero-shot prior || head): keeps the head close to the backbone's
+    # own reading, which matters on schemas unlike the training ones.
+    prior_kl: float = 0.0
     seed: int = 0
     device: str = "cpu"
 
@@ -124,6 +127,7 @@ def train_head(
     targets = build_targets(train, teacher_probs(train, t_temps), cfg.teacher_mix, cfg.label_smoothing, cfg.use_teacher)
     pool = [(it, tg) for it, tg in zip(train, targets) if tg is not None]
     log(f"training on {len(pool)} questions; teacher temperatures {t_temps}")
+    zs_temps = fit_type_temperatures([it.feats.prior.float() for it in train], train) if cfg.prior_kl else {}
 
     device = torch.device(cfg.device)
     head = DecisionHead(head_cfg).to(device)
@@ -149,6 +153,11 @@ def train_head(
             logp = torch.log_softmax(logits, -1).masked_fill(~mask, 0.0)
             p = logp.exp() * mask
             loss = -(q * logp).sum(-1).mean() + cfg.brier_weight * ((p - q) ** 2).sum(-1).mean()
+            if cfg.prior_kl:
+                t = torch.tensor([zs_temps.get(it.type, 1.0) for it, _ in chunk], device=device)[:, None]
+                ref = torch.softmax((b.prior / t).masked_fill(~mask, float("-inf")), -1)
+                kl = (ref * (torch.log(ref.clamp_min(1e-9)) - logp)).masked_fill(~mask, 0.0).sum(-1)
+                loss = loss + cfg.prior_kl * (kl * b.has_prior).mean()
             if use_rl:
                 is_score = torch.tensor([it.type == "score" for it, _ in chunk], device=device)
                 loss = loss + cfg.rl_weight * rlcd_loss(logits, q, mask, is_score)
@@ -168,4 +177,4 @@ def train_head(
     head.load_state_dict(best_state)
     head = head.cpu().eval()
     temps = fit_type_temperatures(head_logits(head, dev), dev)
-    return head, {"history": history, "temperatures": temps, "teacher_temperatures": t_temps}
+    return head, {"history": history, "temperatures": temps, "teacher_temperatures": t_temps, "zero_shot_temperatures": zs_temps}

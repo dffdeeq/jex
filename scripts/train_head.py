@@ -29,6 +29,7 @@ def main():
     ap.add_argument("--layers", type=int, default=2)
     ap.add_argument("--no-teacher", action="store_true")
     ap.add_argument("--no-memory", action="store_true")
+    ap.add_argument("--prior-kl", type=float, default=0.0, help="weight of KL to the calibrated zero-shot prior")
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = ap.parse_args()
@@ -41,7 +42,8 @@ def main():
     dev = load_split(args.feats, "dev")
     d_backbone = train[0].feats.answer_hidden.shape[-1]
     head_cfg = HeadConfig(d_backbone=d_backbone, d_model=args.d_model, n_layers=args.layers, use_memory=not args.no_memory)
-    cfg = TrainConfig(epochs=args.epochs, rl_epochs=args.rl_epochs, use_teacher=not args.no_teacher, device=args.device)
+    cfg = TrainConfig(epochs=args.epochs, rl_epochs=args.rl_epochs, use_teacher=not args.no_teacher,
+                      prior_kl=args.prior_kl, device=args.device)
 
     t0 = time.time()
     head, info = train_head(train, dev, head_cfg, cfg)
