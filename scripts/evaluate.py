@@ -55,15 +55,19 @@ def main():
     ev = load_split(args.feats, "eval")
     meta_path = Path(args.feats, "meta.json")
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
-    student = meta.get("student", "student").split("/")[-1]
-    teacher = meta.get("teacher", "teacher").split("/")[-1]
+    student = meta.get("student", "student").split("/")[-1] + (" + LoRA" if meta.get("student_adapter") else "")
+    teacher = (meta.get("teacher") or "teacher").split("/")[-1]
     results = {}
 
-    zs = lambda items: [it.feats.prior.float() for it in items]  # noqa: E731
+    def _or_flat(x, n):  # no single-token prior (>26 options): uniform
+        return x.float() if x is not None else torch.zeros(n)
+
+    zs = lambda items: [_or_flat(it.feats.prior, it.n) for it in items]  # noqa: E731
     results[f"zero-shot {student}"] = _metrics(ev, zs(ev), {})
     results[f"zero-shot {student} +T"] = _metrics(ev, zs(ev), fit_type_temperatures(zs(dev), dev))
-    tz = lambda items: [it.teacher_logits.float() for it in items]  # noqa: E731
-    results[f"teacher zero-shot {teacher} +T"] = _metrics(ev, tz(ev), fit_type_temperatures(tz(dev), dev))
+    tz = lambda items: [_or_flat(it.teacher_logits, it.n) for it in items]  # noqa: E731
+    if any(it.teacher_logits is not None for it in ev):
+        results[f"teacher zero-shot {teacher} +T"] = _metrics(ev, tz(ev), fit_type_temperatures(tz(dev), dev))
     for path in args.heads:
         model = JexModel.load(path, backbone=_NoBackbone())
         label = f"jex {student} + head [{Path(path).name}]"

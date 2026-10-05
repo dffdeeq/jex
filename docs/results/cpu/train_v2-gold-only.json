@@ -1,0 +1,106 @@
+{
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 2.2239160889196747,
+      "dev_n": 205,
+      "dev_accuracy": 0.5853658536585366,
+      "dev_ece": 0.17783086430735703,
+      "dev_brier": 0.5798447675749193,
+      "dev_nll": 1.4169914722947183
+    },
+    {
+      "epoch": 1,
+      "train_loss": 2.0740547871413924,
+      "dev_n": 205,
+      "dev_accuracy": 0.6,
+      "dev_ece": 0.160629198754706,
+      "dev_brier": 0.5339716925589568,
+      "dev_nll": 1.2647240019666124
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.8756828284673668,
+      "dev_n": 205,
+      "dev_accuracy": 0.5853658536585366,
+      "dev_ece": 0.17042001260489953,
+      "dev_brier": 0.5408673204027028,
+      "dev_nll": 1.2537487071856033
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.7035795734321164,
+      "dev_n": 205,
+      "dev_accuracy": 0.6,
+      "dev_ece": 0.14019300159884662,
+      "dev_brier": 0.5337039944651903,
+      "dev_nll": 1.1352193049443584
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.5793763296610015,
+      "dev_n": 205,
+      "dev_accuracy": 0.6097560975609756,
+      "dev_ece": 0.15067985533941083,
+      "dev_brier": 0.5331914249561669,
+      "dev_nll": 1.1276916920543343
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.4389679139017766,
+      "dev_n": 205,
+      "dev_accuracy": 0.6146341463414634,
+      "dev_ece": 0.12757307320106318,
+      "dev_brier": 0.5131937843029994,
+      "dev_nll": 1.1069826392610933
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.2852468880154284,
+      "dev_n": 205,
+      "dev_accuracy": 0.6195121951219512,
+      "dev_ece": 0.1272574613733989,
+      "dev_brier": 0.5077007153824037,
+      "dev_nll": 1.0845537148994493
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.23695572002514,
+      "dev_n": 205,
+      "dev_accuracy": 0.6195121951219512,
+      "dev_ece": 0.13094383092915138,
+      "dev_brier": 0.5110331565010202,
+      "dev_nll": 1.0889781695240734
+    }
+  ],
+  "temperatures": {
+    "noul": 1.1929097175598145,
+    "choice": 1.8769655227661133
+  },
+  "teacher_temperatures": {},
+  "zero_shot_temperatures": {},
+  "train_seconds": 88.94619846343994,
+  "head_parameters": 2833927,
+  "config": {
+    "epochs": 8,
+    "rl_epochs": 2,
+    "batch_size": 32,
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "brier_weight": 1.0,
+    "rl_weight": 0.5,
+    "teacher_mix": 0.3,
+    "label_smoothing": 0.05,
+    "use_teacher": false,
+    "prior_kl": 0.0,
+    "seed": 0,
+    "device": "cpu",
+    "d_backbone": 896,
+    "d_model": 256,
+    "n_layers": 2,
+    "n_heads": 4,
+    "dropout": 0.1,
+    "use_memory": true,
+    "max_memory": 1024
+  }
+}

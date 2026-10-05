@@ -46,10 +46,12 @@ def load_split(feats_dir: str | Path, split: str, with_teacher: bool = True) -> 
     return items
 
 
-def fit_type_temperatures(logits: list[torch.Tensor], items: list[Item]) -> dict[str, float]:
+def fit_type_temperatures(logits: list[torch.Tensor | None], items: list[Item]) -> dict[str, float]:
+    """Per-type temperature on gold questions; entries without logits (e.g. no
+    single-token prior for >26 options) are skipped."""
     temps = {}
     for t in ("noul", "choice", "score"):
-        idx = [i for i, it in enumerate(items) if it.type == t and it.gold is not None]
+        idx = [i for i, it in enumerate(items) if it.type == t and it.gold is not None and logits[i] is not None]
         if len(idx) >= 20:
             temps[t] = fit_temperature([logits[i] for i in idx], [items[i].gold for i in idx])
     return temps
@@ -127,7 +129,7 @@ def train_head(
     targets = build_targets(train, teacher_probs(train, t_temps), cfg.teacher_mix, cfg.label_smoothing, cfg.use_teacher)
     pool = [(it, tg) for it, tg in zip(train, targets) if tg is not None]
     log(f"training on {len(pool)} questions; teacher temperatures {t_temps}")
-    zs_temps = fit_type_temperatures([it.feats.prior.float() for it in train], train) if cfg.prior_kl else {}
+    zs_temps = fit_type_temperatures([it.feats.prior for it in train], train) if cfg.prior_kl else {}
 
     device = torch.device(cfg.device)
     head = DecisionHead(head_cfg).to(device)

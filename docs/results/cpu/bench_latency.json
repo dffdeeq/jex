@@ -1,0 +1,67 @@
+[
+  {
+    "k": 1,
+    "tokens": 208,
+    "jex_one_pass": 0.43319244000122126,
+    "jex_cached_state": 0.16833488500014937,
+    "jex_k_separate": 0.4157046500004071,
+    "llm_json_generation": 1.3932005210008356,
+    "llm_json_new_tokens": 16,
+    "llm_json_valid_strict": false,
+    "llm_json_valid_lenient": true,
+    "llm_json_text": "```json\n{\n  \"department\": \"B (technical)\"\n}\n```",
+    "llm_k_generations": 0.7308825199997955
+  },
+  {
+    "k": 2,
+    "tokens": 236,
+    "jex_one_pass": 0.501024678000249,
+    "jex_cached_state": 0.2549198350006918,
+    "jex_k_separate": 0.8260230199994112,
+    "llm_json_generation": 2.0126302010012296,
+    "llm_json_new_tokens": 26,
+    "llm_json_valid_strict": false,
+    "llm_json_valid_lenient": true,
+    "llm_json_text": "```json\n{\n  \"department\": \"B (technical)\",\n  \"churn_risk\": \"No\"\n}\n```",
+    "llm_k_generations": 1.0717695959992852
+  },
+  {
+    "k": 4,
+    "tokens": 310,
+    "jex_one_pass": 0.6270021899999847,
+    "jex_cached_state": 0.38901941500080284,
+    "jex_k_separate": 1.6461064610011817,
+    "llm_json_generation": 3.007028715999695,
+    "llm_json_new_tokens": 42,
+    "llm_json_valid_strict": false,
+    "llm_json_valid_lenient": true,
+    "llm_json_text": "```json\n{\n  \"department\": \"B (technical)\",\n  \"churn_risk\": \"No\",\n  \"urgency\": \"0\",\n  \"has_phone\": \"Yes\"\n}\n```",
+    "llm_k_generations": 2.0836407739989227
+  },
+  {
+    "k": 8,
+    "tokens": 451,
+    "jex_one_pass": 0.9932005209993804,
+    "jex_cached_state": 0.6354659429998719,
+    "jex_k_separate": 3.1453298879987415,
+    "llm_json_generation": 5.689965855000992,
+    "llm_json_new_tokens": 78,
+    "llm_json_valid_strict": false,
+    "llm_json_valid_lenient": true,
+    "llm_json_text": "```json\n{\n  \"department\": \"B (technical)\",\n  \"churn_risk\": \"No\",\n  \"urgency\": \"2 (urgent)\",\n  \"has_phone\": \"Yes\",\n  \"sentiment\": \"A (positive)\",\n  \"refund\": \"No\",\n  \"outage\": \"No\",\n  \"language\": \"D (French)\"\n}\n```",
+    "llm_k_generations": 4.521405913999843
+  },
+  {
+    "k": 16,
+    "tokens": 748,
+    "jex_one_pass": 1.9120965140009503,
+    "jex_cached_state": 1.5909590800001752,
+    "jex_k_separate": 6.4264588200003345,
+    "llm_json_generation": 9.608417090999865,
+    "llm_json_new_tokens": 130,
+    "llm_json_valid_strict": false,
+    "llm_json_valid_lenient": false,
+    "llm_json_text": "```json\n{\n    \"department\": \"B (technical)\",\n    \"churn_risk\": \"No\",\n    \"urgency\": \"2 (urgent)\",\n    \"has_phone\": \"Yes\",\n    \"sentiment\": \"A (positive)\",\n    \"refund\": \"No\",\n    \"outage\": \"No\",\n    \"language\": \"C (spanish)\",\n    \"politeness\": \"2 (polite)\",\n    \"deadline\": \"No\",\n    \"channel\": \"B (phone)\",\n    \"spam\": \"No\",\n    \"multiple_issues\": \"No\",\n    \"priority\": \"P2\"\n}\n```",
+    "llm_k_generations": 8.541254997000578
+  }
+]

@@ -1,0 +1,1 @@
+{"student": "Qwen/Qwen2.5-0.5B-Instruct", "teacher": "Qwen/Qwen2.5-1.5B-Instruct", "teacher_quant": null, "dtype": "torch.float32"}

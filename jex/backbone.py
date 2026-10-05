@@ -54,9 +54,11 @@ class Backbone:
         attn_implementation: str = "sdpa",
         max_state_tokens: int | None = 4096,
         quantization: str | None = None,
+        adapter: str | None = None,
     ):
         """``quantization`` = "4bit" / "8bit" loads the weights with bitsandbytes
-        (CUDA only), e.g. a 7B-14B teacher on a single 16 GB T4."""
+        (CUDA only), e.g. a 7B-14B teacher on a single 16 GB T4. ``adapter`` is a
+        LoRA directory (see jex/lora.py), merged into the weights at load time."""
         self.name = name_or_path
         self.device = torch.device(device)
         self.dtype = dtype
@@ -75,6 +77,11 @@ class Backbone:
             self.lm = AutoModelForCausalLM.from_pretrained(name_or_path, **kwargs)
         else:
             self.lm = AutoModelForCausalLM.from_pretrained(name_or_path, **kwargs).to(self.device)
+        self.adapter = adapter
+        if adapter:
+            from peft import PeftModel
+
+            self.lm = PeftModel.from_pretrained(self.lm, adapter).merge_and_unload()
         self.lm.eval().requires_grad_(False)
         self.base = self.lm.base_model
         self.lm_head = self.lm.get_output_embeddings()

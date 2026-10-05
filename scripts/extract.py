@@ -86,6 +86,8 @@ def main():
     ap.add_argument("--teacher-quant", default=None, choices=["4bit", "8bit"],
                     help="bitsandbytes quantization for a big teacher (cuda only)")
     ap.add_argument("--splits", default="train,dev,eval")
+    ap.add_argument("--student-adapter", default=None, help="LoRA adapter merged into the student")
+    ap.add_argument("--records-from", default=None, help="reuse records.pt from an earlier run (same questions)")
     ap.add_argument("--skip-teacher", action="store_true")
     args = ap.parse_args()
     dtype = getattr(torch, args.dtype or ("float16" if args.device.startswith("cuda") else "float32"))
@@ -93,14 +95,21 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
-    data = splits(args)
+    if args.records_from:
+        from jex.data import Record
+
+        saved = torch.load(args.records_from, weights_only=False)
+        data = {k: [Record(**r) for r in v] for k, v in saved.items() if k in args.splits.split(",")}
+    else:
+        data = splits(args)
     for name, recs in data.items():
         print(f"{name}: {len(recs)} records, {sum(len(r.questions) for r in recs)} questions", flush=True)
     torch.save({k: [r.__dict__ for r in v] for k, v in data.items()}, out / "records.pt")
-    (out / "meta.json").write_text(json.dumps({"student": args.student, "teacher": args.teacher,
+    (out / "meta.json").write_text(json.dumps({"student": args.student, "student_adapter": args.student_adapter,
+                                               "teacher": None if args.skip_teacher else args.teacher,
                                                "teacher_quant": args.teacher_quant, "dtype": str(dtype)}))
 
-    student = Backbone(args.student, dtype=dtype, device=args.device)
+    student = Backbone(args.student, dtype=dtype, device=args.device, adapter=args.student_adapter)
     for name, recs in data.items():
         path = out / f"student_{name}.pt"
         if not path.exists():
