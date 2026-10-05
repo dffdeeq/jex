@@ -40,6 +40,7 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--max-state-tokens", type=int, default=3072)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--quant", default=None, choices=["4bit", "8bit"], help="bitsandbytes (cuda), e.g. 9B on a T4")
     ap.add_argument("--threads", type=int, default=4)
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
@@ -50,7 +51,7 @@ def main():
     from jev_benchmarking.tasks import get_tasks
 
     dtype = torch.float16 if args.device.startswith("cuda") else torch.float32
-    kw = dict(device=args.device, dtype=dtype, max_state_tokens=args.max_state_tokens)
+    kw = dict(device=args.device, dtype=dtype, max_state_tokens=args.max_state_tokens, quantization=args.quant)
     model = JexModel.load(args.checkpoint, **kw) if args.checkpoint else JexModel(Backbone(args.backbone, **kw))
     tag = f"hf:jex/{args.tag}"
 
