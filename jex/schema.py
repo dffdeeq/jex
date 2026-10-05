@@ -64,6 +64,7 @@ class Answer:
         if q.type == "noul":
             return {"type": "noul", "noul": round(p[0], 6)}
         probs = {oid: round(pi, 6) for oid, pi in zip(q.option_ids, p)}
+        k = len(p)
         out: dict[str, Any] = {"type": q.type}
         if q.type == "choice":
             out["choice"] = q.option_ids[top]
@@ -71,7 +72,8 @@ class Answer:
             out["score"] = round(sum(i * pi for i, pi in enumerate(p)), 6)
             out["legend"] = dict(zip(q.option_ids, q.option_descriptions))
         out["probabilities"] = probs
-        out["confidence"] = round(p[top], 6)
+        # Jev's documented confidence: how far the top option is above uniform.
+        out["confidence"] = round(max(0.0, min(1.0, (k * p[top] - 1) / (k - 1))), 6)
         return out
 
 
@@ -81,28 +83,33 @@ def render_state(state: Any) -> str:
     return json.dumps(state, ensure_ascii=False, indent=1, sort_keys=False)
 
 
+def _as_text(value: Any) -> str:
+    """Instructions and option descriptions may be structured (Jev accepts JSON there too)."""
+    if value is None:
+        return ""
+    return value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, indent=1)
+
+
 def parse_question(name: str, spec: dict[str, Any]) -> Question:
     if not isinstance(spec, dict):
         raise SchemaError(f"question {name!r}: spec must be an object")
     qtype = spec.get("type")
     if qtype not in QUESTION_TYPES:
         raise SchemaError(f"question {name!r}: type must be one of {QUESTION_TYPES}, got {qtype!r}")
-    instructions = spec.get("instructions") or ""
-    if not isinstance(instructions, str):
-        raise SchemaError(f"question {name!r}: instructions must be a string")
+    instructions = _as_text(spec.get("instructions"))
     criteria = spec.get("criteria")
 
     if qtype == "noul":
         # Optional {"true": "...", "false": "..."} descriptions, as in Clef.
         desc = criteria if isinstance(criteria, dict) else {}
         ids = ("true", "false")
-        descs = (str(desc.get("true", "")), str(desc.get("false", "")))
+        descs = (_as_text(desc.get("true")), _as_text(desc.get("false")))
         if not instructions:
             raise SchemaError(f"question {name!r}: noul requires instructions")
     elif qtype == "choice":
         if isinstance(criteria, dict):
             ids = tuple(str(k) for k in criteria)
-            descs = tuple(str(v or "") for v in criteria.values())
+            descs = tuple(_as_text(v) for v in criteria.values())
         elif isinstance(criteria, list):
             ids = tuple(str(k) for k in criteria)
             descs = tuple("" for _ in criteria)
@@ -120,7 +127,7 @@ def parse_question(name: str, spec: dict[str, Any]) -> Question:
                 f"question {name!r}: score needs {MIN_SCORE_LEVELS}..{MAX_SCORE_LEVELS} levels"
             )
         ids = tuple(str(i) for i in range(len(criteria)))
-        descs = tuple(str(c) for c in criteria)
+        descs = tuple(_as_text(c) for c in criteria)
     return Question(name, qtype, instructions, ids, descs)
 
 

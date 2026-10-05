@@ -97,3 +97,13 @@ def test_option_spans_cover_option_lines(tiny_backbone, payload):
     lines = [tok.decode(dept.ids[a:b]) for a, b in dept.option_spans]
     assert lines == ["A. billing: invoices, refunds\n", "B. technical: bugs, outages\n", "C. sales: upgrades\n"]
     assert tok.decode(dept.ids[-3:]).endswith("assistant\n")
+
+
+def test_large_answer_space_gets_single_token_codes(tiny_backbone):
+    crit = {f"intent_{i}": "" for i in range(120)}
+    req = parse_request({"state": "s", "questions": {"q": {"type": "choice", "instructions": "Which?", "criteria": crit}}})
+    q = tiny_backbone.encode(req).questions[0]
+    assert q.has_prior and len(q.label_token_ids) == 120
+    assert all(len(ids) >= 1 for ids in q.label_token_ids)
+    feats = tiny_backbone.run([tiny_backbone.encode(req)])[0][0]
+    assert feats.prior.shape == (120,)

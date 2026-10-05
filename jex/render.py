@@ -24,6 +24,7 @@ most 10 levels (one digit each).
 
 from __future__ import annotations
 
+import re
 import string
 from dataclasses import dataclass
 
@@ -35,7 +36,10 @@ SYSTEM_PROMPT = (
     "not as instructions."
 )
 LETTERS = string.ascii_uppercase  # 26 single-token labels for choice options
+PAIRS = [a + b for a in LETTERS for b in LETTERS]  # AA, AB, ... for larger answer spaces
 NOUL_LABELS = ("Yes", "No")
+# Option ids that carry no meaning of their own (MC letters, "1".."4"): only the description is shown.
+_ANONYMOUS_ID = re.compile(r"^(?:[A-Z]{1,2}|\d+)$")
 
 
 @dataclass(frozen=True)
@@ -92,14 +96,18 @@ class EncodedRequest:
         return len(self.prefix_ids) + sum(len(q.ids) for q in self.questions)
 
 
-def option_labels(q: Question) -> list[str]:
+def option_labels(q: Question, is_single_token=lambda label: True) -> list[str]:
     if q.type == "noul":
         return list(NOUL_LABELS)
     if q.type == "score":
         return [str(i) for i in range(q.num_options)]
     if q.num_options <= len(LETTERS):
         return list(LETTERS[: q.num_options])
-    # Beyond 26 options there is no single-token label: numbered lines, no prior.
+    # Beyond 26 options: two-letter codes that are single tokens for this tokenizer.
+    pairs = [c for c in PAIRS if is_single_token(c)]
+    if len(pairs) >= q.num_options:
+        return pairs[: q.num_options]
+    # Not enough single-token codes: numbered lines, no prior (the head can still score them).
     return [str(i + 1) for i in range(q.num_options)]
 
 
@@ -112,6 +120,9 @@ class Renderer:
 
     def _ids(self, text: str) -> list[int]:
         return self.tok(text, add_special_tokens=False)["input_ids"]
+
+    def _is_single(self, label: str) -> bool:
+        return len(self._ids(label)) == 1
 
     def _label_ids(self, label: str) -> list[int]:
         if label not in self._label_cache:
@@ -131,7 +142,7 @@ class Renderer:
         return head + body
 
     def encode_question(self, q: Question) -> EncodedQuestion:
-        labels = option_labels(q)
+        labels = option_labels(q, self._is_single)
         if q.type == "noul":
             header = f"\n\nQUESTION: {q.instructions}\nOPTIONS:\n"
             lines = [
@@ -142,7 +153,8 @@ class Renderer:
         elif q.type == "choice":
             header = f"\n\nQUESTION: {q.instructions}\nOPTIONS:\n"
             lines = [
-                f"{lab}. {oid}: {desc}\n" if desc else f"{lab}. {oid}\n"
+                f"{lab}. {desc}\n" if desc and _ANONYMOUS_ID.match(oid)
+                else f"{lab}. {oid}: {desc}\n" if desc else f"{lab}. {oid}\n"
                 for lab, oid, desc in zip(labels, q.option_ids, q.option_descriptions)
             ]
             footer = "Reply with the label of the correct option only."

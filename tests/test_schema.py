@@ -19,6 +19,7 @@ def test_parse_types(payload):
     [
         {"type": "bool", "instructions": "x"},
         {"type": "noul"},
+        {"type": "noul", "instructions": ""},
         {"type": "choice", "instructions": "x", "criteria": {"a": ""}},
         {"type": "choice", "instructions": "x", "criteria": {str(i): "" for i in range(256)}},
         {"type": "choice", "instructions": "x", "criteria": "a,b"},
@@ -45,7 +46,7 @@ def test_response_shape(payload):
     resp = build_response("jex-test", answers, input_tokens=42)
     a = resp["answers"]
     assert a["department"]["choice"] == "billing"
-    assert a["department"]["confidence"] == 0.7
+    assert abs(a["department"]["confidence"] - 0.55) < 1e-9  # Jev: (K*p_max - 1) / (K - 1)
     assert a["churn_risk"] == {"type": "noul", "noul": 0.8}
     assert math.isclose(a["urgency"]["score"], 1.9)
     assert a["urgency"]["legend"]["2"] == "urgent"
@@ -56,3 +57,14 @@ def test_response_rejects_invalid_distribution(payload):
     req = parse_request(payload)
     with pytest.raises(AssertionError):
         build_response("x", [Answer(req.questions[0], [0.5, 0.1, 0.1])], 0)
+
+
+def test_structured_instructions_and_descriptions():
+    """Jev accepts JSON objects as instructions and option descriptions."""
+    req = parse_request({"state": {"clause": "x"}, "questions": {
+        "unfair": {"type": "noul", "instructions": {"clause_type": {"name": "Liability"}, "question": "Is it?"}},
+        "pick": {"type": "choice", "instructions": "Which?", "criteria": {"1": {"text": "first"}, "2": None}},
+    }})
+    q, c = req.questions
+    assert '"question": "Is it?"' in q.instructions
+    assert '"text": "first"' in c.option_descriptions[0] and c.option_descriptions[1] == ""
