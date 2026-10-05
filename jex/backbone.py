@@ -1,0 +1,192 @@
+"""Frozen causal-LM backbone run in prefill-only mode.
+
+Nothing is ever generated. One forward pass over the packed tree (prefix +
+isolated question branches) yields, per question:
+
+* ``prior``         - next-token logits of the option labels at the answer slot
+                      (the zero-shot "verbalizer" readout);
+* ``answer_hidden`` - final hidden state at the answer slot;
+* ``option_hidden`` - mean hidden state over each option line;
+* ``memory``        - hidden states of state + branch tokens (for the head's
+                      evidence routing).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, DynamicCache
+
+from .packing import Packed, pack_branches, pack_requests
+from .render import EncodedQuestion, EncodedRequest, Renderer
+from .schema import Request
+
+
+@dataclass
+class QuestionFeatures:
+    answer_hidden: torch.Tensor  # (D,)
+    option_hidden: torch.Tensor  # (n_opt, D)
+    prior: torch.Tensor | None  # (n_opt,) verbalizer logits, None if labels are not single tokens
+    state_hidden: torch.Tensor | None  # (S, D), shared between questions of a request
+    branch_hidden: torch.Tensor | None  # (L, D)
+
+
+@dataclass
+class StateCache:
+    """Key/values (and hidden states) of an encoded state prefix."""
+
+    prefix_ids: list[int]
+    kv: DynamicCache
+    hidden: torch.Tensor | None
+
+    @property
+    def length(self) -> int:
+        return len(self.prefix_ids)
+
+
+class Backbone:
+    def __init__(
+        self,
+        name_or_path: str,
+        dtype: torch.dtype = torch.float32,
+        device: str = "cpu",
+        attn_implementation: str = "sdpa",
+        max_state_tokens: int | None = 4096,
+    ):
+        self.name = name_or_path
+        self.device = torch.device(device)
+        self.dtype = dtype
+        self.tokenizer = AutoTokenizer.from_pretrained(name_or_path)
+        self.lm = AutoModelForCausalLM.from_pretrained(
+            name_or_path, dtype=dtype, attn_implementation=attn_implementation
+        ).to(self.device)
+        self.lm.eval().requires_grad_(False)
+        self.base = self.lm.base_model
+        self.lm_head = self.lm.get_output_embeddings()
+        self.renderer = Renderer(self.tokenizer, max_state_tokens=max_state_tokens)
+        pad = self.tokenizer.pad_token_id
+        self.pad_id = pad if pad is not None else self.tokenizer.eos_token_id
+
+    @property
+    def hidden_size(self) -> int:
+        return self.lm.config.hidden_size
+
+    def encode(self, request: Request) -> EncodedRequest:
+        return self.renderer.encode(request)
+
+    # ------------------------------------------------------------------ forward
+
+    def _forward(self, packed: Packed, past: DynamicCache | None = None) -> torch.Tensor:
+        out = self.base(
+            input_ids=packed.input_ids.to(self.device),
+            position_ids=packed.position_ids.to(self.device),
+            attention_mask=packed.attention_mask.to(self.device, self.dtype),
+            past_key_values=past,
+            use_cache=past is not None,
+        )
+        return out.last_hidden_state
+
+    def _prior(self, q: EncodedQuestion, answer_hidden: torch.Tensor) -> torch.Tensor | None:
+        if not q.has_prior:
+            return None
+        logits = self.lm_head(answer_hidden[None]).float()[0]
+        return torch.stack([torch.logsumexp(logits[ids], dim=0) for ids in q.label_token_ids])
+
+    def _features(
+        self,
+        questions: list[EncodedQuestion],
+        hidden: torch.Tensor,
+        offsets: list[tuple[int, int]],
+        state_hidden: torch.Tensor | None,
+        keep_memory: bool,
+    ) -> list[QuestionFeatures]:
+        feats = []
+        for q, (start, end) in zip(questions, offsets):
+            branch = hidden[start:end]
+            answer = branch[q.answer_index]
+            options = torch.stack([branch[a:b].mean(0) for a, b in q.option_spans])
+            feats.append(
+                QuestionFeatures(
+                    answer_hidden=answer.float(),
+                    option_hidden=options.float(),
+                    prior=self._prior(q, answer),
+                    state_hidden=state_hidden if keep_memory else None,
+                    branch_hidden=branch.float() if keep_memory else None,
+                )
+            )
+        return feats
+
+    @torch.inference_mode()
+    def run(self, encoded: list[EncodedRequest], keep_memory: bool = False) -> list[list[QuestionFeatures]]:
+        """One forward pass for a batch of requests, all questions in parallel."""
+        packed = pack_requests(encoded, self.pad_id, self.dtype)
+        hidden = self._forward(packed)
+        results = []
+        for b, enc in enumerate(encoded):
+            S = packed.prefix_lengths[b]
+            state_hidden = hidden[b, :S].float() if keep_memory else None
+            results.append(
+                self._features(enc.questions, hidden[b], packed.branch_offsets[b], state_hidden, keep_memory)
+            )
+        return results
+
+    # ------------------------------------------------------- cached-state path
+
+    @torch.inference_mode()
+    def prefill(self, prefix_ids: list[int], keep_memory: bool = False) -> StateCache:
+        kv = DynamicCache(config=self.lm.config)
+        out = self.base(
+            input_ids=torch.tensor([prefix_ids], device=self.device),
+            past_key_values=kv,
+            use_cache=True,
+        )
+        hidden = out.last_hidden_state[0].float() if keep_memory else None
+        return StateCache(list(prefix_ids), out.past_key_values, hidden)
+
+    @torch.inference_mode()
+    def extend(self, state: StateCache, new_ids: list[int]) -> None:
+        """Append tokens to a cached state in place (a live state: chat, logs,
+        game events). Only the new tokens are computed."""
+        if not new_ids:
+            return
+        out = self.base(
+            input_ids=torch.tensor([new_ids], device=self.device),
+            position_ids=torch.arange(state.length, state.length + len(new_ids), device=self.device)[None],
+            past_key_values=state.kv,
+            use_cache=True,
+        )
+        state.prefix_ids.extend(new_ids)
+        if state.hidden is not None:
+            state.hidden = torch.cat([state.hidden, out.last_hidden_state[0].float()])
+
+    @torch.inference_mode()
+    def run_branches(
+        self, state: StateCache, questions: list[EncodedQuestion], keep_memory: bool = False
+    ) -> list[QuestionFeatures]:
+        """Answer questions against a cached state: only question tokens are computed."""
+        packed = pack_branches(questions, state.length, self.dtype)
+        try:
+            hidden = self._forward(packed, past=state.kv)[0]
+        finally:
+            # Drop the branch key/values again, layer by layer, so the cache holds
+            # only the state even if the forward pass failed half way.
+            for layer in state.kv.layers:
+                extra = layer.get_seq_length() - state.length
+                if extra > 0:
+                    layer.crop(-extra)
+        return self._features(questions, hidden, packed.branch_offsets[0], state.hidden, keep_memory)
+
+    # ------------------------------------------------------ autoregressive ref
+
+    @torch.inference_mode()
+    def generate_text(self, prompt_ids: list[int], max_new_tokens: int) -> list[int]:
+        """Plain greedy decoding, used only as the autoregressive baseline."""
+        out = self.lm.generate(
+            torch.tensor([prompt_ids], device=self.device),
+            attention_mask=torch.ones(1, len(prompt_ids), dtype=torch.long, device=self.device),
+            max_new_tokens=max_new_tokens,
+            do_sample=False,
+            pad_token_id=self.pad_id,
+        )
+        return out[0, len(prompt_ids):].tolist()
