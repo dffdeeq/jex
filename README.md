@@ -30,7 +30,7 @@
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -e ".[server,dev]"
-pytest                                    # 36 тестов, крошечная случайная модель, ~10 с
+pytest                                    # 37 тестов, крошечная случайная модель, ~15 с
 ```
 
 ```python
