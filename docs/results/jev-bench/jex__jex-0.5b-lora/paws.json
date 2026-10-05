@@ -1,0 +1,28 @@
+{
+ "task": "paws",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.5
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.5,
+   "balanced_accuracy": 0.53125,
+   "f1": 0.6511627906976745,
+   "precision": 0.4827586206896552,
+   "recall": 1.0,
+   "auroc": 0.7321428571428571,
+   "auprc": 0.7486831920025196,
+   "ece": 0.23867980000000003,
+   "brier": 0.26219048381573334,
+   "positive_rate": 0.4666666666666667
+  }
+ },
+ "aggregate": {}
+}

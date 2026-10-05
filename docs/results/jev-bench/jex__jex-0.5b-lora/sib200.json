@@ -1,0 +1,28 @@
+{
+ "task": "sib200",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.43333333333333335
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.43333333333333335,
+   "ece": 0.3301380333333333,
+   "brier": 0.8108405366565667,
+   "mean_top_prob": 0.7534683,
+   "mean_confidence": 0.7123798,
+   "sel_acc@50": 0.6666666666666666,
+   "sel_acc@80": 0.5416666666666666,
+   "aurc": 0.37187475361326056,
+   "macro_f1": 0.4107142857142857
+  }
+ },
+ "aggregate": {},
+ "subsets": {}
+}

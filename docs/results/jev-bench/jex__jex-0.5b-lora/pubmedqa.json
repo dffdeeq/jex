@@ -1,0 +1,27 @@
+{
+ "task": "pubmedqa",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.36666666666666664
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.36666666666666664,
+   "ece": 0.39127686666666667,
+   "brier": 0.7936396787614,
+   "mean_top_prob": 0.7536750666666666,
+   "mean_confidence": 0.6305124999999999,
+   "sel_acc@50": 0.6,
+   "sel_acc@80": 0.4583333333333333,
+   "aurc": 0.35047082173156757,
+   "macro_f1": 0.18333333333333335
+  }
+ },
+ "aggregate": {}
+}

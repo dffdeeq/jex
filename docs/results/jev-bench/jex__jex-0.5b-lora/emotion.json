@@ -1,0 +1,27 @@
+{
+ "task": "emotion",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.7
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.7,
+   "ece": 0.20192363333333327,
+   "brier": 0.473069632579,
+   "mean_top_prob": 0.8156901,
+   "mean_confidence": 0.7788281,
+   "sel_acc@50": 0.8666666666666667,
+   "sel_acc@80": 0.75,
+   "aurc": 0.16340551121623592,
+   "macro_f1": 0.6056758056758057
+  }
+ },
+ "aggregate": {}
+}

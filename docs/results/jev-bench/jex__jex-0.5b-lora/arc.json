@@ -1,0 +1,27 @@
+{
+ "task": "arc",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.5666666666666667
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.5666666666666667,
+   "ece": 0.37024819999999997,
+   "brier": 0.7021558567026334,
+   "mean_top_prob": 0.7206419333333334,
+   "mean_confidence": 0.6275224666666669,
+   "sel_acc@50": 0.5333333333333333,
+   "sel_acc@80": 0.5416666666666666,
+   "aurc": 0.4195911602097337
+  }
+ },
+ "aggregate": {},
+ "subsets": {}
+}

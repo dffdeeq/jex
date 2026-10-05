@@ -1,0 +1,28 @@
+{
+ "task": "agb_de",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "f1",
+  "value": 0.0
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.7333333333333333,
+   "balanced_accuracy": 0.3793103448275862,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": 0.24137931034482762,
+   "auprc": 0.043478260869565216,
+   "ece": 0.4040829666666666,
+   "brier": 0.20503054389310005,
+   "positive_rate": 0.03333333333333333
+  }
+ },
+ "aggregate": {}
+}

@@ -1,0 +1,27 @@
+{
+ "task": "sst2",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.7666666666666667
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.7666666666666667,
+   "ece": 0.1888649666666666,
+   "brier": 0.35055444141766673,
+   "mean_top_prob": 0.9320041666666666,
+   "mean_confidence": 0.8640083666666667,
+   "sel_acc@50": 0.9333333333333333,
+   "sel_acc@80": 0.8333333333333334,
+   "aurc": 0.09849448889504364,
+   "macro_f1": 0.7643097643097643
+  }
+ },
+ "aggregate": {}
+}

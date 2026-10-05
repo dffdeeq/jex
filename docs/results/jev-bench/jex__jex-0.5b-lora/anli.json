@@ -1,0 +1,28 @@
+{
+ "task": "anli",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.3333333333333333
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.3333333333333333,
+   "ece": 0.3172112666666667,
+   "brier": 0.814792058364,
+   "mean_top_prob": 0.6505445999999999,
+   "mean_confidence": 0.4758169,
+   "sel_acc@50": 0.4,
+   "sel_acc@80": 0.375,
+   "aurc": 0.6640980398903992,
+   "macro_f1": 0.25210084033613445
+  }
+ },
+ "aggregate": {},
+ "subsets": {}
+}

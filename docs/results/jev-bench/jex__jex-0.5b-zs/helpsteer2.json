@@ -1,0 +1,53 @@
+{
+ "task": "helpsteer2",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "*",
+  "metric": "mean_spearman",
+  "value": 0.05229164022385456
+ },
+ "heads": {
+  "helpfulness": {
+   "spearman": 0.018066808943423492,
+   "pearson": 0.13974936263828744,
+   "kendall": 0.032366301566355136,
+   "mae": 1.0121329,
+   "argmax_accuracy": 0.36666666666666664
+  },
+  "correctness": {
+   "spearman": -0.08460831098150495,
+   "pearson": -0.06084697480783948,
+   "kendall": -0.0627341427513046,
+   "mae": 1.0730363333333335,
+   "argmax_accuracy": 0.26666666666666666
+  },
+  "coherence": {
+   "spearman": 0.16354181620072833,
+   "pearson": 0.16342133211288043,
+   "kendall": 0.12823462233869892,
+   "mae": 0.8019572666666667,
+   "argmax_accuracy": 0.5
+  },
+  "complexity": {
+   "spearman": 0.13001222652701114,
+   "pearson": 0.1933842140956379,
+   "kendall": 0.10465823835696726,
+   "mae": 0.8034626333333331,
+   "argmax_accuracy": 0.43333333333333335
+  },
+  "verbosity": {
+   "spearman": 0.03444566042961482,
+   "pearson": 0.13091637114869775,
+   "kendall": 0.02713361735180633,
+   "mae": 0.5452634,
+   "argmax_accuracy": 0.43333333333333335
+  }
+ },
+ "aggregate": {
+  "mean_spearman": 0.05229164022385456
+ }
+}

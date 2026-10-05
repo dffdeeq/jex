@@ -1,0 +1,52 @@
+{
+ "task": "summeval",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "*",
+  "metric": "mean_group_spearman",
+  "value": -0.026834155973400754
+ },
+ "heads": {
+  "coherence": {
+   "spearman": -0.20870366372801416,
+   "pearson": -0.162709417251456,
+   "kendall": -0.15237006253470772,
+   "mae": 0.957167422222222,
+   "group_spearman": -0.2040825933446688,
+   "group_kendall": -0.15509015306874607
+  },
+  "consistency": {
+   "spearman": 0.048600418937080524,
+   "pearson": 0.2463426540369565,
+   "kendall": 0.040481904205607516,
+   "mae": 1.110350311111111,
+   "group_spearman": 0.1663852866653603,
+   "group_kendall": 0.14301238851341463
+  },
+  "fluency": {
+   "spearman": -0.12837779538511038,
+   "pearson": 0.03487779052424758,
+   "kendall": -0.11628693150774141,
+   "mae": 0.8936178444444444,
+   "group_spearman": 0.040956185642228415,
+   "group_kendall": 0.030792842550861076
+  },
+  "relevance": {
+   "spearman": -0.10990635333667888,
+   "pearson": -0.05827796592711439,
+   "kendall": -0.1160599968270805,
+   "mae": 0.5633629222222222,
+   "group_spearman": -0.11059550285652292,
+   "group_kendall": -0.11521866334124002
+  }
+ },
+ "aggregate": {
+  "mean_group_spearman": -0.026834155973400754,
+  "mean_group_kendall": -0.024125896336427595,
+  "mean_spearman": -0.09959684837818072
+ }
+}

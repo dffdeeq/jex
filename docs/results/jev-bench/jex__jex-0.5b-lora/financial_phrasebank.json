@@ -1,0 +1,27 @@
+{
+ "task": "financial_phrasebank",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.4
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.4,
+   "ece": 0.37367523333333336,
+   "brier": 0.7253481829297,
+   "mean_top_prob": 0.7176465666666666,
+   "mean_confidence": 0.5764698333333332,
+   "sel_acc@50": 0.6666666666666666,
+   "sel_acc@80": 0.4583333333333333,
+   "aurc": 0.47888959240946605,
+   "macro_f1": 0.3619694397283532
+  }
+ },
+ "aggregate": {}
+}

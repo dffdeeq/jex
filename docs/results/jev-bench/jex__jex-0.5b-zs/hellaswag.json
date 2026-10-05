@@ -1,0 +1,27 @@
+{
+ "task": "hellaswag",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.4666666666666667
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.4666666666666667,
+   "ece": 0.27269603333333337,
+   "brier": 0.739743877933,
+   "mean_top_prob": 0.6488461000000001,
+   "mean_confidence": 0.5317948,
+   "sel_acc@50": 0.5333333333333333,
+   "sel_acc@80": 0.5,
+   "aurc": 0.46178429125293224,
+   "macro_f1": 0.4163401253918495
+  }
+ },
+ "aggregate": {}
+}

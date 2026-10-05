@@ -1,0 +1,27 @@
+{
+ "task": "banking77",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.0
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.0,
+   "ece": 0.2993896333333333,
+   "brier": 1.1364331133323,
+   "mean_top_prob": 0.2993896333333333,
+   "mean_confidence": 0.29017103333333333,
+   "sel_acc@50": 0.0,
+   "sel_acc@80": 0.0,
+   "aurc": 1.0,
+   "macro_f1": 0.0
+  }
+ },
+ "aggregate": {}
+}

@@ -22,15 +22,16 @@
   были добавлены до него.
 
 Подробный ресерч (Jev, Laya, Clef, предполагаемая архитектура Jev, варианты
-сборки), результаты экспериментов и план масштабирования лежат в
-[`docs/RESEARCH.md`](docs/RESEARCH.md).
+сборки) и результаты экспериментов лежат в [`docs/RESEARCH.md`](docs/RESEARCH.md).
+Прямое сравнение с Jev на его же бенчмарке и план, как сделать open-source
+аналог уровня Jev, — в [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Быстрый старт
 
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -e ".[server,dev]"
-pytest                                    # 37 тестов, крошечная случайная модель, ~15 с
+pytest                                    # 52 теста, крошечные случайные модели (обычная и гибридная), ~20 с
 ```
 
 ```python

@@ -1,0 +1,27 @@
+{
+ "task": "language_id",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.03333333333333333
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.03333333333333333,
+   "ece": 0.22668463333333336,
+   "brier": 1.0949857956234998,
+   "mean_top_prob": 0.2600179666666667,
+   "mean_confidence": 0.22107156666666666,
+   "sel_acc@50": 0.0,
+   "sel_acc@80": 0.0,
+   "aurc": 0.9940323682277704,
+   "macro_f1": 0.004901960784313725
+  }
+ },
+ "aggregate": {}
+}

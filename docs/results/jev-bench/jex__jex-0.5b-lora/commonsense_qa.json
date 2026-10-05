@@ -1,0 +1,27 @@
+{
+ "task": "commonsense_qa",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.5
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.5,
+   "ece": 0.2986523666666667,
+   "brier": 0.7532355530762334,
+   "mean_top_prob": 0.7114149666666666,
+   "mean_confidence": 0.6392688333333335,
+   "sel_acc@50": 0.6,
+   "sel_acc@80": 0.5,
+   "aurc": 0.43063854616103525,
+   "macro_f1": 0.49177489177489175
+  }
+ },
+ "aggregate": {}
+}

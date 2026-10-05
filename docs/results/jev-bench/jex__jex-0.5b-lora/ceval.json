@@ -1,0 +1,28 @@
+{
+ "task": "ceval",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.5
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.5,
+   "ece": 0.20096473333333326,
+   "brier": 0.6475177239137666,
+   "mean_top_prob": 0.5111597333333333,
+   "mean_confidence": 0.3482128666666666,
+   "sel_acc@50": 0.6,
+   "sel_acc@80": 0.5833333333333334,
+   "aurc": 0.3872054326118563,
+   "macro_f1": 0.44721652616389457
+  }
+ },
+ "aggregate": {},
+ "subsets": {}
+}

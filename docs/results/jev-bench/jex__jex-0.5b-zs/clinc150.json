@@ -1,0 +1,31 @@
+{
+ "task": "clinc150",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.0
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.0,
+   "ece": 0.25347943333333334,
+   "brier": 1.0973849373121998,
+   "mean_top_prob": 0.25347943333333334,
+   "mean_confidence": 0.2485026333333334,
+   "sel_acc@50": 0.0,
+   "sel_acc@80": 0.0,
+   "aurc": 1.0,
+   "macro_f1": 0.0
+  }
+ },
+ "aggregate": {
+  "in_scope_accuracy": 0.0,
+  "oos_recall": 0.0,
+  "oos_precision": 0.0
+ }
+}

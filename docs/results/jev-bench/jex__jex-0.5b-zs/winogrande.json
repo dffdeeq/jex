@@ -1,0 +1,27 @@
+{
+ "task": "winogrande",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.5
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.5,
+   "ece": 0.2950862666666667,
+   "brier": 0.6533981588674334,
+   "mean_top_prob": 0.7039388,
+   "mean_confidence": 0.40787769999999995,
+   "sel_acc@50": 0.4666666666666667,
+   "sel_acc@80": 0.4583333333333333,
+   "aurc": 0.5564796416802983,
+   "macro_f1": 0.45054945054945056
+  }
+ },
+ "aggregate": {}
+}

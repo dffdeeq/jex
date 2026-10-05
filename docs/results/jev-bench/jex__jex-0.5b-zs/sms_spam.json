@@ -1,0 +1,28 @@
+{
+ "task": "sms_spam",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "f1",
+  "value": 0.3333333333333333
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.8666666666666667,
+   "balanced_accuracy": 0.6,
+   "f1": 0.3333333333333333,
+   "precision": 1.0,
+   "recall": 0.2,
+   "auroc": 0.904,
+   "auprc": 0.8588235294117648,
+   "ece": 0.14780146666666663,
+   "brier": 0.09396977500753333,
+   "positive_rate": 0.16666666666666666
+  }
+ },
+ "aggregate": {}
+}

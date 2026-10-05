@@ -1,0 +1,40 @@
+{
+ "task": "toxic_chat",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "toxic",
+  "metric": "f1",
+  "value": 0.0
+ },
+ "heads": {
+  "toxic": {
+   "accuracy": 0.9666666666666667,
+   "balanced_accuracy": 0.5,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": 0.9655172413793104,
+   "auprc": 0.5,
+   "ece": 0.10645066666666667,
+   "brier": 0.030144740783600004,
+   "positive_rate": 0.03333333333333333
+  },
+  "jailbreak": {
+   "accuracy": 1.0,
+   "balanced_accuracy": 0.5,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": NaN,
+   "auprc": NaN,
+   "ece": 0.04406980000000001,
+   "brier": 0.0021419419024666666,
+   "positive_rate": 0.0
+  }
+ },
+ "aggregate": {}
+}

@@ -1,0 +1,27 @@
+{
+ "task": "bigbench",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.43333333333333335
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.43333333333333335,
+   "ece": 0.37756133333333336,
+   "brier": 0.8287221058313333,
+   "mean_top_prob": 0.7009473999999999,
+   "mean_confidence": 0.6055576666666667,
+   "sel_acc@50": 0.5333333333333333,
+   "sel_acc@80": 0.4583333333333333,
+   "aurc": 0.4277259535044388
+  }
+ },
+ "aggregate": {},
+ "subsets": {}
+}

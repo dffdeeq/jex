@@ -1,0 +1,27 @@
+{
+ "task": "rotten_tomatoes",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.7666666666666667
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.7666666666666667,
+   "ece": 0.1914061666666667,
+   "brier": 0.3872814879404334,
+   "mean_top_prob": 0.9502737,
+   "mean_confidence": 0.9005474333333334,
+   "sel_acc@50": 0.8,
+   "sel_acc@80": 0.7916666666666666,
+   "aurc": 0.19822918689572633,
+   "macro_f1": 0.76
+  }
+ },
+ "aggregate": {}
+}

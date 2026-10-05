@@ -1,0 +1,118 @@
+{
+ "task": "unfair_tos",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "*",
+  "metric": "micro_f1",
+  "value": 0.057803468208092484
+ },
+ "heads": {
+  "limitation_of_liability": {
+   "accuracy": 0.06666666666666667,
+   "balanced_accuracy": 0.5172413793103449,
+   "f1": 0.06666666666666667,
+   "precision": 0.034482758620689655,
+   "recall": 1.0,
+   "auroc": 0.3448275862068966,
+   "auprc": 0.05,
+   "ece": 0.5984655666666667,
+   "brier": 0.4024930097555001,
+   "positive_rate": 0.03333333333333333
+  },
+  "unilateral_termination": {
+   "accuracy": 0.23333333333333334,
+   "balanced_accuracy": 0.5740740740740741,
+   "f1": 0.20689655172413793,
+   "precision": 0.11538461538461539,
+   "recall": 1.0,
+   "auroc": 0.8395061728395061,
+   "auprc": 0.5194805194805194,
+   "ece": 0.5051978,
+   "brier": 0.3359787985792,
+   "positive_rate": 0.1
+  },
+  "unilateral_change": {
+   "accuracy": 0.1,
+   "balanced_accuracy": 0.05,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": NaN,
+   "auprc": NaN,
+   "ece": 0.6119644000000001,
+   "brier": 0.38592060644013343,
+   "positive_rate": 0.0
+  },
+  "content_removal": {
+   "accuracy": 0.2,
+   "balanced_accuracy": 0.1,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": NaN,
+   "auprc": NaN,
+   "ece": 0.5740232333333334,
+   "brier": 0.3416920465077667,
+   "positive_rate": 0.0
+  },
+  "contract_by_using": {
+   "accuracy": 0.2,
+   "balanced_accuracy": 0.1,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": NaN,
+   "auprc": NaN,
+   "ece": 0.5999361999999999,
+   "brier": 0.37196172312806663,
+   "positive_rate": 0.0
+  },
+  "choice_of_law": {
+   "accuracy": 0.7,
+   "balanced_accuracy": 0.35,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": NaN,
+   "auprc": NaN,
+   "ece": 0.46137086666666666,
+   "brier": 0.2254057647586,
+   "positive_rate": 0.0
+  },
+  "jurisdiction": {
+   "accuracy": 0.6,
+   "balanced_accuracy": 0.7931034482758621,
+   "f1": 0.14285714285714285,
+   "precision": 0.07692307692307693,
+   "recall": 1.0,
+   "auroc": 1.0,
+   "auprc": 1.0,
+   "ece": 0.48946683333333335,
+   "brier": 0.2558772952900334,
+   "positive_rate": 0.03333333333333333
+  },
+  "arbitration": {
+   "accuracy": 0.4666666666666667,
+   "balanced_accuracy": 0.23333333333333334,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": NaN,
+   "auprc": NaN,
+   "ece": 0.5056263666666667,
+   "brier": 0.27014772951723326,
+   "positive_rate": 0.0
+  }
+ },
+ "aggregate": {
+  "micro_f1": 0.057803468208092484,
+  "macro_f1": 0.05205254515599343,
+  "exact_match": 0.03333333333333333,
+  "mean_auroc": 0.7281112530154675,
+  "mean_auprc": 0.5231601731601732
+ }
+}

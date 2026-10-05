@@ -1,0 +1,22 @@
+{
+ "task": "stsb",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "spearman",
+  "value": 0.5933733479872064
+ },
+ "heads": {
+  "answer": {
+   "spearman": 0.5933733479872064,
+   "pearson": 0.6062820034371071,
+   "kendall": 0.427838727806979,
+   "mae": 1.4271108333333333
+  }
+ },
+ "aggregate": {}
+}

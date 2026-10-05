@@ -1,0 +1,23 @@
+{
+ "task": "sst5",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-lora"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "argmax_accuracy",
+  "value": 0.5666666666666667
+ },
+ "heads": {
+  "answer": {
+   "spearman": 0.572458052027342,
+   "pearson": 0.7135619925612582,
+   "kendall": 0.40204220056417306,
+   "mae": 0.6236128,
+   "argmax_accuracy": 0.5666666666666667
+  }
+ },
+ "aggregate": {}
+}

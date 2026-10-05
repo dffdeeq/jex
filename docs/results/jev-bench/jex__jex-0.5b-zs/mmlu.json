@@ -1,0 +1,28 @@
+{
+ "task": "mmlu",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.4666666666666667
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.4666666666666667,
+   "ece": 0.23388283333333337,
+   "brier": 0.6539903497917333,
+   "mean_top_prob": 0.6551570999999999,
+   "mean_confidence": 0.5402095333333334,
+   "sel_acc@50": 0.6666666666666666,
+   "sel_acc@80": 0.4583333333333333,
+   "aurc": 0.3934305436546893,
+   "macro_f1": 0.45436507936507936
+  }
+ },
+ "aggregate": {},
+ "subsets": {}
+}

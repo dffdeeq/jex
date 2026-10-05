@@ -1,0 +1,34 @@
+{
+ "task": "toxigen",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "toxic",
+  "metric": "accuracy",
+  "value": 0.6
+ },
+ "heads": {
+  "toxic": {
+   "accuracy": 0.6,
+   "balanced_accuracy": 0.5,
+   "f1": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "auroc": 0.5324074074074074,
+   "auprc": 0.4454783260218043,
+   "ece": 0.2940956333333334,
+   "brier": 0.30621029812489997,
+   "positive_rate": 0.4
+  },
+  "toxicity": {
+   "spearman": -0.08278547190704483,
+   "pearson": -0.1612997809262777,
+   "kendall": -0.05841854693825869,
+   "mae": 1.3820126000000001
+  }
+ },
+ "aggregate": {}
+}

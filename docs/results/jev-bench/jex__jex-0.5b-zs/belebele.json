@@ -1,0 +1,28 @@
+{
+ "task": "belebele",
+ "n_examples": 30,
+ "n_answered": 30,
+ "models": [
+  "hf:jex/jex-0.5b-zs"
+ ],
+ "primary": {
+  "head": "answer",
+  "metric": "accuracy",
+  "value": 0.26666666666666666
+ },
+ "heads": {
+  "answer": {
+   "accuracy": 0.26666666666666666,
+   "ece": 0.3245783,
+   "brier": 0.8358749716136,
+   "mean_top_prob": 0.5912449666666666,
+   "mean_confidence": 0.45499330000000004,
+   "sel_acc@50": 0.4,
+   "sel_acc@80": 0.2916666666666667,
+   "aurc": 0.521234437025546,
+   "macro_f1": 0.23168498168498167
+  }
+ },
+ "aggregate": {},
+ "subsets": {}
+}
