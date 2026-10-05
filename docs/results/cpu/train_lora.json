@@ -1,0 +1,17 @@
+{
+  "student": null,
+  "teacher_temperatures": {
+    "noul": 2.20491361618042,
+    "choice": 3.366056442260742,
+    "score": 4.380690097808838
+  },
+  "seconds": 2538.211662054062,
+  "feats": "artifacts/feats",
+  "out": "artifacts/lora",
+  "epochs": 1,
+  "lr": 0.0002,
+  "batch_records": 4,
+  "no_teacher": false,
+  "threads": 4,
+  "device": "cpu"
+}

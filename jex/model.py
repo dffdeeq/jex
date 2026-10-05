@@ -88,7 +88,11 @@ class JexModel:
     def load(cls, path: str | Path, backbone: Backbone | None = None, **backbone_kwargs) -> "JexModel":
         path = Path(path)
         meta = json.loads((path / "jex.json").read_text())
-        backbone = backbone or Backbone(meta["backbone"], **backbone_kwargs)
+        if backbone is None:
+            adapter = meta.get("adapter")
+            if adapter is not None:
+                backbone_kwargs["adapter"] = str((path / adapter).resolve())
+            backbone = Backbone(meta["backbone"], **backbone_kwargs)
         head = None
         if "head" in meta:
             head = DecisionHead(HeadConfig(**meta["head"]))
@@ -102,11 +106,15 @@ def save_checkpoint(
     backbone_name: str,
     head: DecisionHead | None,
     temperatures: dict[str, float],
+    adapter: str | None = None,
 ) -> None:
-    """A checkpoint is tiny: the backbone is referenced by name, only the head is stored."""
+    """A checkpoint is tiny: the backbone is referenced by name; only the head and/or
+    a LoRA adapter (``adapter`` is relative to the checkpoint directory) are stored."""
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
     meta = {"name": name, "backbone": backbone_name, "temperatures": temperatures}
+    if adapter is not None:
+        meta["adapter"] = adapter
     if head is not None:
         meta["head"] = head.config_dict()
         torch.save(head.state_dict(), path / "head.pt")

@@ -1,0 +1,10 @@
+{
+  "name": "jex-0.1-lora",
+  "backbone": "Qwen/Qwen2.5-0.5B-Instruct",
+  "temperatures": {
+    "noul": 0.7619736194610596,
+    "choice": 0.8391066193580627,
+    "score": 0.8247490525245667
+  },
+  "adapter": "."
+}

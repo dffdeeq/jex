@@ -17,7 +17,8 @@ from pathlib import Path
 import torch
 
 from jex.backbone import Backbone
-from jex.lora import train_lora
+from jex.lora import calibrate, train_lora
+from jex.model import save_checkpoint
 from jex.training import build_targets, fit_type_temperatures, load_split, teacher_probs
 
 
@@ -30,6 +31,7 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--batch-records", type=int, default=4)
     ap.add_argument("--no-teacher", action="store_true")
+    ap.add_argument("--max-records", type=int, default=None, help="train on a random subset (time budget)")
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = ap.parse_args()
@@ -51,15 +53,27 @@ def main():
         k += n
     assert k == len(flat)
     del items
+    if args.max_records and args.max_records < len(records):
+        import random
 
-    dtype = torch.float32 if args.device == "cpu" else torch.bfloat16
+        keep = sorted(random.Random(0).sample(range(len(records)), args.max_records))
+        records, targets = [records[i] for i in keep], [targets[i] for i in keep]
+
+    # bf16 where the GPU supports it (A100/L4/H100); fp32 on CPU and on T4.
+    cuda_bf16 = args.device.startswith("cuda") and torch.cuda.is_bf16_supported()
+    dtype = torch.bfloat16 if cuda_bf16 else torch.float32
     bb = Backbone(student, dtype=dtype, device=args.device)
     t0 = time.time()
     model = train_lora(bb, records, targets, epochs=args.epochs, lr=args.lr, batch_records=args.batch_records)
     model.save_pretrained(args.out)
-    info = {"student": student, "teacher_temperatures": t_temps, "seconds": time.time() - t0, **vars(args)}
+    seconds = time.time() - t0
+    dev = torch.load(Path(args.feats, "records.pt"), weights_only=False)["dev"]
+    temps = calibrate(bb, dev)
+    # A servable checkpoint: python -m jex.server --checkpoint <out>
+    save_checkpoint(args.out, "jex-0.1-lora", student, None, temps, adapter=".")
+    info = {"student": student, "teacher_temperatures": t_temps, "temperatures": temps, "seconds": seconds, **vars(args)}
     Path(args.out, "train_info.json").write_text(json.dumps(info, indent=2))
-    print(f"saved LoRA adapter to {args.out} in {info['seconds']:.0f}s")
+    print(f"saved LoRA checkpoint to {args.out} in {seconds:.0f}s, temperatures {temps}")
 
 
 if __name__ == "__main__":

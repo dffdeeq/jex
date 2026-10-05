@@ -2,6 +2,7 @@ import torch
 
 from jex.backbone import Backbone
 from jex.lora import answer_label_logits, train_lora
+from jex.model import JexModel, save_checkpoint
 from jex.schema import parse_request
 
 
@@ -30,3 +31,11 @@ def test_lora_learns_and_round_trips(tiny_backbone, payload, tmp_path):
     # the merged model serves through the normal prefill-only path
     feats = merged.run([merged.encode(req)])[0]
     assert abs(torch.softmax(feats[0].prior, -1)[0].item() - reloaded[0]) < 1e-4
+    # and as a servable checkpoint (adapter path relative to the checkpoint dir)
+    save_checkpoint(tmp_path / "adapter", "jex-lora", path, None, {"noul": 2.0}, adapter=".")
+    served = JexModel.load(tmp_path / "adapter")
+    noul_q = next(q for q in req.questions if q.type == "noul")
+    p_true = served.predict(payload)["answers"][noul_q.name]["noul"]
+    idx = [q.name for q in req.questions].index(noul_q.name)
+    expected = torch.softmax(feats[idx].prior / 2.0, -1)[0].item()
+    assert abs(p_true - expected) < 1e-4

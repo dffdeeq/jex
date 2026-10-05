@@ -102,3 +102,21 @@ def train_lora(
                 log(f"  step {step}/{steps} loss {loss.item():.4f} ({(time.time() - t0) / step:.2f}s/step)")
     peft_model.eval()
     return peft_model
+
+
+@torch.no_grad()
+def calibrate(bb: Backbone, records: list[dict], batch_records: int = 4) -> dict[str, float]:
+    """Per-type temperatures of the tuned readout, fitted on gold questions of ``records``."""
+    from types import SimpleNamespace
+
+    from .training import fit_type_temperatures
+
+    logits, items = [], []
+    for i in range(0, len(records), batch_records):
+        chunk = records[i : i + batch_records]
+        reqs = [parse_request({"state": r["state"], "questions": r["questions"]}) for r in chunk]
+        for r, req, row in zip(chunk, reqs, answer_label_logits(bb, [bb.encode(q) for q in reqs])):
+            for q, lg in zip(req.questions, row):
+                logits.append(lg.cpu() if lg is not None else None)
+                items.append(SimpleNamespace(type=q.type, gold=r["labels"].get(q.name)))
+    return fit_type_temperatures(logits, items)

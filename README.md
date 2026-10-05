@@ -75,15 +75,23 @@ python -m jex.server --checkpoint artifacts/jex-head      # или --backbone <h
 curl localhost:8000/v1/systemone -d @request.json
 ```
 
-## Обучение головы (дистилляция из модели побольше)
+## Обучение: дистилляция из модели побольше
 
 ```bash
-python scripts/extract.py      # данные + признаки студента (0.5B) + soft-labels учителя (1.5B)
-python scripts/train_head.py   # CE + Brier + KD, в конце RLCD → artifacts/jex-head
-python scripts/evaluate.py     # точность/ECE на знакомых и отложенных задачах
+python scripts/extract.py        # данные + признаки студента (0.5B) + soft-labels учителя (1.5B)
+python scripts/train_lora.py     # LoRA на бэкбон (рекомендуется: обобщается на новые схемы) → artifacts/lora
+python scripts/train_head.py     # или голова поверх замороженных признаков (доменный адаптер) → artifacts/jex-head
+python scripts/evaluate.py       # точность/ECE на знакомых и отложенных задачах
 python scripts/bench_latency.py
 python scripts/bench_async.py
+python -m jex.server --checkpoint artifacts/lora
 ```
+
+На CPU (студент Qwen2.5-0.5B, учитель 1.5B) LoRA подняла среднюю точность на знакомых задачах с 0.57
+до 0.82 (выше учителя), а на **новых, невиданных схемах** — с 0.53 до 0.63; внешняя голова дала
+0.72 на знакомых, но 0.47 на новых. Полные таблицы — в [`docs/RESEARCH.md`](docs/RESEARCH.md#7-эксперименты-cpu-без-gpu).
+GPU-прогон крупнее: [`notebooks/jex_gpu.ipynb`](notebooks/jex_gpu.ipynb) (Colab/Kaggle; или через colab-mcp, см.
+[`docs/COLAB_MCP.md`](docs/COLAB_MCP.md)).
 
 ## Устройство
 
@@ -96,5 +104,6 @@ python scripts/bench_async.py
 | `jex/head.py` | обучаемая голова в духе Clef/Laya: evidence routing, конкуренция вариантов, гейт к лексическому prior |
 | `jex/rlcd.py` | RLCD: гауссова политика на логитах, строго собственные scoring rules, групповой baseline |
 | `jex/training.py` | обучение головы: gold + дистилляция калиброванного учителя + Brier + RLCD |
+| `jex/lora.py` | LoRA на бэкбон: обучение readout-а самой LLM на упакованных ветках, калибровка |
 | `jex/engine.py` | async-движок: LRU KV-кэш состояний, непрерывный микробатчинг, стриминг, сессии |
 | `jex/server.py` | FastAPI: `/v1/systemone`, `/v1/systemone/stream`, `/v1/ask` |
