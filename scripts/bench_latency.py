@@ -100,8 +100,14 @@ def ar_json_valid(text: str, request) -> bool:
         obj = json.loads(m.group(0))
     except json.JSONDecodeError:
         return False
+    if not isinstance(obj, dict):
+        return False
     for q in request.questions:
-        if str(obj.get(q.name)) not in option_labels(q):
+        # Be lenient: accept the label, the option id or (for noul) yes/no/true/false.
+        allowed = {s.lower() for s in (*option_labels(q), *q.option_ids)}
+        if q.type == "noul":
+            allowed |= {"yes", "no", "true", "false"}
+        if str(obj.get(q.name)).strip().lower() not in allowed:
             return False
     return True
 
