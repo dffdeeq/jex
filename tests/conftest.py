@@ -30,6 +30,41 @@ def tiny_backbone(tmp_path_factory) -> Backbone:
     return Backbone(str(path))
 
 
+@pytest.fixture(scope="session")
+def tiny_hybrid_backbone(tmp_path_factory) -> Backbone:
+    """Qwen3.5-style hybrid: 3 linear-attention (gated delta) layers + 1 full attention.
+    Recurrent layers ignore attention masks, so this exercises the forked-branch mode."""
+    from transformers.models.qwen3_5 import Qwen3_5ForCausalLM, Qwen3_5TextConfig
+
+    path = tmp_path_factory.mktemp("tiny-qwen35")
+    tok = AutoTokenizer.from_pretrained(TOKENIZER)
+    torch.manual_seed(0)
+    cfg = Qwen3_5TextConfig(
+        vocab_size=len(tok),
+        hidden_size=64,
+        intermediate_size=128,
+        num_hidden_layers=4,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        head_dim=16,
+        layer_types=["linear_attention", "linear_attention", "linear_attention", "full_attention"],
+        linear_num_key_heads=2,
+        linear_num_value_heads=4,
+        linear_key_head_dim=16,
+        linear_value_head_dim=16,
+        max_position_embeddings=4096,
+        tie_word_embeddings=True,
+    )
+    Qwen3_5ForCausalLM(cfg).save_pretrained(path)
+    tok.save_pretrained(path)
+    return Backbone(str(path))
+
+
+@pytest.fixture(params=["attention", "hybrid"])
+def any_backbone(request, tiny_backbone, tiny_hybrid_backbone) -> Backbone:
+    return tiny_backbone if request.param == "attention" else tiny_hybrid_backbone
+
+
 @pytest.fixture
 def payload():
     return {

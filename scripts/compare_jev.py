@@ -26,6 +26,8 @@ def load(harness: Path, model: str, split: str) -> dict[str, tuple[str, float]]:
     out = {}
     for f in sorted(results_dir(harness, model, split).glob("*.json")):
         res = json.loads(f.read_text())
+        if not isinstance(res, dict):  # e.g. probes.json
+            continue
         prim = res.get("primary") or {}
         if prim.get("value") is not None:
             out[f.stem] = (prim["metric"], float(prim["value"]))

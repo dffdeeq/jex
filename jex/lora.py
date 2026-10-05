@@ -31,8 +31,42 @@ def add_lora(bb: Backbone, r: int = 16, alpha: int = 32, dropout: float = 0.05):
     return peft_model
 
 
+def _unpacked_answer_hidden(bb: Backbone, encoded) -> list[list[torch.Tensor]]:
+    """For hybrid (linear-attention) backbones: every state + question is its own
+    right-padded row, so no recurrent state crosses branches."""
+    seqs = [enc.prefix_ids + q.ids for enc in encoded for q in enc.questions]
+    L = max(len(x) for x in seqs)
+    ids = torch.full((len(seqs), L), bb.pad_id, dtype=torch.long)
+    mask = torch.zeros((len(seqs), L), dtype=torch.long)
+    for i, x in enumerate(seqs):
+        ids[i, : len(x)] = torch.tensor(x)
+        mask[i, : len(x)] = 1
+    hidden = bb.base(input_ids=ids.to(bb.device), attention_mask=mask.to(bb.device)).last_hidden_state
+    out, k = [], 0
+    for enc in encoded:
+        row = []
+        for _ in enc.questions:
+            row.append(hidden[k, len(seqs[k]) - 1])
+            k += 1
+        out.append(row)
+    return out
+
+
 def answer_label_logits(bb: Backbone, encoded) -> list[list[torch.Tensor | None]]:
     """Differentiable version of the verbalizer readout for a batch of records."""
+    if not bb.tree_packing:
+        answers = _unpacked_answer_hidden(bb, encoded)
+        out = []
+        for enc, row_h in zip(encoded, answers):
+            row = []
+            for q, h in zip(enc.questions, row_h):
+                if not q.has_prior:
+                    row.append(None)
+                    continue
+                logits = bb.lm_head(h[None]).float()[0]
+                row.append(torch.stack([torch.logsumexp(logits[ids], 0) for ids in q.label_token_ids]))
+            out.append(row)
+        return out
     packed = pack_requests(encoded, bb.pad_id, bb.dtype)
     hidden = bb.base(
         input_ids=packed.input_ids.to(bb.device),

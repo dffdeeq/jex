@@ -9,10 +9,24 @@ isolated question branches) yields, per question:
 * ``option_hidden`` - mean hidden state over each option line;
 * ``memory``        - hidden states of state + branch tokens (for the head's
                       evidence routing).
+
+Two execution modes, chosen from the architecture:
+
+* *tree packing* (pure attention models): prefix and branches share one
+  sequence; a block-sparse mask and restarted positions isolate the branches;
+* *forked branches* (hybrid models with linear-attention / recurrent layers,
+  e.g. Qwen3.5/3.6/3.8): recurrent layers ignore attention masks, so packed
+  branches would leak into each other. The state is prefilled once and its
+  cache (key/values and recurrent states) is copied per branch; branches run
+  as rows of one batch.
+
+Both give every question exactly the answer of a separate ``state + question``
+call.
 """
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 
 import torch
@@ -83,6 +97,10 @@ class Backbone:
 
             self.lm = PeftModel.from_pretrained(self.lm, adapter).merge_and_unload()
         self.lm.eval().requires_grad_(False)
+        cfg = self.lm.config
+        self.text_config = cfg.get_text_config() if hasattr(cfg, "get_text_config") else cfg
+        layer_types = getattr(self.text_config, "layer_types", None) or []
+        self.tree_packing = not any("linear" in t or "mamba" in t for t in layer_types)
         self.base = self.lm.base_model
         self.lm_head = self.lm.get_output_embeddings()
         self.renderer = Renderer(self.tokenizer, max_state_tokens=max_state_tokens)
@@ -91,7 +109,7 @@ class Backbone:
 
     @property
     def hidden_size(self) -> int:
-        return self.lm.config.hidden_size
+        return self.text_config.hidden_size
 
     def encode(self, request: Request) -> EncodedRequest:
         return self.renderer.encode(request)
@@ -141,6 +159,9 @@ class Backbone:
     @torch.inference_mode()
     def run(self, encoded: list[EncodedRequest], keep_memory: bool = False) -> list[list[QuestionFeatures]]:
         """One forward pass for a batch of requests, all questions in parallel."""
+        if not self.tree_packing:
+            return [self.run_branches(self.prefill(enc.prefix_ids, keep_memory), enc.questions, keep_memory)
+                    for enc in encoded]
         packed = pack_requests(encoded, self.pad_id, self.dtype)
         hidden = self._forward(packed)
         results = []
@@ -186,6 +207,8 @@ class Backbone:
         self, state: StateCache, questions: list[EncodedQuestion], keep_memory: bool = False
     ) -> list[QuestionFeatures]:
         """Answer questions against a cached state: only question tokens are computed."""
+        if not self.tree_packing:
+            return self._run_branches_forked(state, questions, keep_memory)
         packed = pack_branches(questions, state.length, self.dtype)
         try:
             hidden = self._forward(packed, past=state.kv)[0]
@@ -197,6 +220,31 @@ class Backbone:
                 if extra > 0:
                     layer.crop(-extra)
         return self._features(questions, hidden, packed.branch_offsets[0], state.hidden, keep_memory)
+
+    def _run_branches_forked(
+        self, state: StateCache, questions: list[EncodedQuestion], keep_memory: bool
+    ) -> list[QuestionFeatures]:
+        S, lens = state.length, [len(q.ids) for q in questions]
+        B, L = len(questions), max(lens)
+        input_ids = torch.full((B, L), self.pad_id, dtype=torch.long)
+        mask = torch.zeros((B, S + L), dtype=torch.long)
+        mask[:, :S] = 1
+        for i, q in enumerate(questions):
+            input_ids[i, : lens[i]] = torch.tensor(q.ids)
+            mask[i, S : S + lens[i]] = 1  # right padding: it never reaches an answer slot
+        out = self.base(
+            input_ids=input_ids.to(self.device),
+            attention_mask=mask.to(self.device),
+            position_ids=torch.arange(S, S + L, device=self.device)[None].expand(B, L),
+            past_key_values=fork_cache(state.kv, B),
+            use_cache=True,
+        )
+        hidden = torch.cat([out.last_hidden_state[i, : lens[i]] for i in range(B)])
+        offsets, start = [], 0
+        for n in lens:
+            offsets.append((start, start + n))
+            start += n
+        return self._features(questions, hidden, offsets, state.hidden, keep_memory)
 
     # ------------------------------------------------------ autoregressive ref
 
@@ -211,3 +259,24 @@ class Backbone:
             pad_token_id=self.pad_id,
         )
         return out[0, len(prompt_ids):].tolist()
+
+
+def fork_cache(cache: DynamicCache, n: int) -> DynamicCache:
+    """A copy of ``cache`` repeated ``n`` times along the batch dimension. Works for
+    attention layers (keys/values) and linear-attention layers (conv and recurrent
+    states) alike; the original cache is left untouched."""
+
+    def rep(v):
+        if torch.is_tensor(v) and v.dim() > 0:
+            return v.repeat_interleave(n, dim=0)
+        if isinstance(v, list):
+            return [rep(x) for x in v]
+        if isinstance(v, dict):
+            return {k: rep(x) for k, x in v.items()}
+        return v
+
+    forked = copy.deepcopy(cache)
+    for layer in forked.layers:
+        for name, value in list(vars(layer).items()):
+            setattr(layer, name, rep(value))
+    return forked

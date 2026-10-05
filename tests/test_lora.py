@@ -6,8 +6,8 @@ from jex.model import JexModel, save_checkpoint
 from jex.schema import parse_request
 
 
-def test_lora_learns_and_round_trips(tiny_backbone, payload, tmp_path):
-    path = tiny_backbone.name  # the tiny model directory from conftest
+def test_lora_learns_and_round_trips(any_backbone, payload, tmp_path):
+    path = any_backbone.name  # the tiny model directory from conftest
     bb = Backbone(path)
     records = [{"state": payload["state"], "questions": payload["questions"]}]
     req = parse_request(payload)

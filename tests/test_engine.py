@@ -15,10 +15,12 @@ def _close(a, b, tol=1e-4):
     return all(abs(a["probabilities"][k] - b["probabilities"][k]) < tol for k in a["probabilities"])
 
 
-@pytest.fixture(params=["verbalizer", "head"])
-def model(request, tiny_backbone):
+@pytest.fixture(params=["verbalizer", "head", "hybrid"])
+def model(request, tiny_backbone, tiny_hybrid_backbone):
     if request.param == "verbalizer":
         return JexModel(tiny_backbone)
+    if request.param == "hybrid":
+        return JexModel(tiny_hybrid_backbone)
     torch.manual_seed(0)
     head = DecisionHead(HeadConfig(d_backbone=tiny_backbone.hidden_size, d_model=32, n_layers=1, n_heads=2))
     return JexModel(tiny_backbone, head, temperatures={"choice": 1.5})
