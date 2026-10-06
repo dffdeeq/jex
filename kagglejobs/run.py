@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import pprint
 import subprocess
 import sys
 import tarfile
@@ -111,7 +112,8 @@ def write_kernel(user: str, job: str, config: dict) -> Path:
     folder = BUILD / slug
     folder.mkdir(parents=True, exist_ok=True)
     body = (ROOT / "kagglejobs" / "job.py").read_text()
-    (folder / "job.py").write_text(f"CONFIG = {json.dumps(config, indent=1)}\n\n{body}")
+    # a Python literal, not JSON: null/true/false would be NameErrors in the kernel
+    (folder / "job.py").write_text(f"CONFIG = {pprint.pformat(config, sort_dicts=False)}\n\n{body}")
     meta = {
         "id": f"{user}/{slug}",
         "title": slug,
