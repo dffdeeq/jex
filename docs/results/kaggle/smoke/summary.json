@@ -1,0 +1,26 @@
+{
+ "config": {
+  "student": "Qwen/Qwen2.5-1.5B-Instruct",
+  "teacher": "Qwen/Qwen2.5-7B-Instruct",
+  "teacher_quant": "4bit",
+  "steps": [
+   "setup",
+   "tests",
+   "jev_bench"
+  ],
+  "bench_models": {
+   "qwen2.5-0.5b-zs": [
+    "Qwen/Qwen2.5-0.5B-Instruct",
+    null
+   ]
+  },
+  "bench_tasks": [
+   "sst2",
+   "banking77",
+   "go_emotions"
+  ],
+  "bench_limit": 5
+ },
+ "failed": [],
+ "seconds": 751
+}
