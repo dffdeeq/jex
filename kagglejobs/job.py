@@ -78,6 +78,8 @@ def setup():
     find_source()
     sh("nvidia-smi --query-gpu=name,memory.total --format=csv || true", check=False)
     sh(f"{sys.executable} -m pip install -q -e '.[server,dev,gpu]'")
+    # the image ships torchao 0.10; peft refuses to create LoRA layers next to a torchao < 0.16, jex does not use it
+    sh(f"{sys.executable} -m pip uninstall -q -y torchao", check=False)
     if CONFIG.get("fla", True):
         sh(f"{sys.executable} -m pip install -q flash-linear-attention", check=False)
     sh(f"{sys.executable} -c \"import torch, transformers; print('torch', torch.__version__, 'cuda', "
