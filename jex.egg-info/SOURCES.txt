@@ -6,6 +6,7 @@ jex/calibration.py
 jex/data.py
 jex/engine.py
 jex/head.py
+jex/lora.py
 jex/model.py
 jex/packing.py
 jex/render.py
@@ -21,5 +22,6 @@ jex.egg-info/top_level.txt
 tests/test_engine.py
 tests/test_head_rlcd.py
 tests/test_isolation.py
+tests/test_lora.py
 tests/test_schema.py
 tests/test_server.py

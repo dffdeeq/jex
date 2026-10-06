@@ -91,8 +91,9 @@ python -m jex.server --checkpoint artifacts/lora
 На CPU (студент Qwen2.5-0.5B, учитель 1.5B) LoRA подняла среднюю точность на знакомых задачах с 0.57
 до 0.82 (выше учителя), а на **новых, невиданных схемах** — с 0.53 до 0.63; внешняя голова дала
 0.72 на знакомых, но 0.47 на новых. Полные таблицы — в [`docs/RESEARCH.md`](docs/RESEARCH.md#7-эксперименты-cpu-без-gpu).
-GPU-прогон крупнее: [`notebooks/jex_gpu.ipynb`](notebooks/jex_gpu.ipynb) (Colab/Kaggle; или через colab-mcp, см.
-[`docs/COLAB_MCP.md`](docs/COLAB_MCP.md)).
+GPU-прогоны: из командной строки на Kaggle — `python kagglejobs/run.py smoke|jev-bench|full`
+([`docs/KAGGLE.md`](docs/KAGGLE.md)), или вручную ноутбуком [`notebooks/jex_gpu.ipynb`](notebooks/jex_gpu.ipynb)
+(Colab/Kaggle; через colab-mcp — [`docs/COLAB_MCP.md`](docs/COLAB_MCP.md)).
 
 ## Устройство
 

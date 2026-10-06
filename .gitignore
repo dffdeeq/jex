@@ -1,5 +1,7 @@
-artifacts/
-__pycache__/
+*.log
 *.pyc
 .pytest_cache/
-*.log
+__pycache__/
+artifacts/
+build/
+runs/
