@@ -1,5 +1,12 @@
+import sys
+
 import pytest
 import torch
+
+# The tiny test models run on CPU. With flash-linear-attention installed (the Kaggle GPU image),
+# transformers routes Qwen3.5 linear attention to FLA's Triton kernels, which need CUDA tensors;
+# hiding the package makes it fall back to the torch path.
+sys.modules["fla"] = None
 from transformers import AutoTokenizer, Qwen2Config, Qwen2ForCausalLM
 
 from jex.backbone import Backbone
